@@ -36,15 +36,22 @@ The key is stored in your own Cloud Nine database and never shown again. You can
 - **Privacy:** on the free tier, Google may use what you send to improve its products. Cloudy sends your tasks, reminders, the next 7 days of your calendar and recent headlines when you ask it something. Keep very private details out of chats. On a paid Gemini plan, Google doesn’t use your data this way.
 - **No Google Search on the free tier.** That’s fine here: Cloud Nine fetches the news itself and gives Cloudy the headlines.
 
-## Model name
+## Which model Cloudy uses
 
-Cloud Nine uses `gemini-flash-latest`, which always points to Google’s current fast model. If Google ever retires a name and Cloudy says “model not found”, open [AI Studio](https://aistudio.google.com), copy the name of a current Flash model, and paste it into **Settings → Cloudy (AI) → Model**.
+Leave **Settings → Cloudy (AI) → Model** on **Automatic**. Cloud Nine asks Google which models your key can use and keeps a back-up order:
+
+- **Briefs and news summaries** start with the newest **Flash Lite** model, which has the most free requests a day (hundreds).
+- **Chat and week planning** start with the newest **Flash** model (smarter, but only about 20 free requests a day each).
+
+If a model says it’s **busy** (“high demand”), is **out of free requests**, or has been **retired**, Cloudy quietly tries the next one. A busy model rests for 2 minutes and a used-up one for an hour before Cloudy tries it again. Each model has its own daily allowance, so switching also stretches your free quota.
+
+The settings screen shows the exact order. You can also pick one model to always try first; the others stay as back-ups.
 
 ## Errors you might see
 
 | Message | What to do |
 |---|---|
 | “Add your free Gemini API key…” | No key saved yet. Follow the steps above. |
-| “…hit today’s free limit…” | Wait until tomorrow, or use Cloudy a little less. |
-| “…not found…” or “…not supported…” | Change the model name (see above). |
+| “Gemini is very busy right now…” | Every model was overloaded at once. Wait a minute and try again. |
+| “…used today’s free Gemini allowance…” | Every model is out of free requests. It resets overnight (US Pacific time). |
 | “API key not valid” | Copy the key again from AI Studio and save it. |

@@ -875,7 +875,8 @@ async function askAI(message) {
   box.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(message)}</div><div class="msg model thinking" id="thinking">thinking…</div>`);
   box.scrollTop = box.scrollHeight;
   try {
-    const { reply } = await api("/api/ai/chat", { body: { message, ...aiContext() } });
+    const { reply, model } = await api("/api/ai/chat", { body: { message, ...aiContext() } });
+    if (model) $("#drawer .badge").textContent = prettyModel(model);
     S.data.chat.push({ role: "user", text: message }, { role: "model", text: reply });
     renderChat();
   } catch (e) {
@@ -937,7 +938,8 @@ async function openSettings(tab = "general") {
     body = `<div class="box"><h3>Your Gemini key</h3>
         <p>${s.hasGeminiKey ? `✓ A key is saved${s.geminiKeyFrom === "cloudflare" ? " in Cloudflare" : ""}. Paste a new one to replace it.` : "Get a free key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener'>aistudio.google.com/apikey</a> (sign in with Google → Create API key), then paste it here."}</p>
         <div class="field"><label for="aKey">API key</label><input id="aKey" type="password" autocomplete="off" placeholder="${s.hasGeminiKey ? "•••••••• (saved)" : "AIza…"}"></div>
-        <div class="field"><label for="aModel">Model</label><input id="aModel" value="${esc(s.geminiModel || "gemini-flash-latest")}"><span class="hint">“gemini-flash-latest” always points to Google’s current fast model. If Google retires a name, pick another from the AI Studio model list.</span></div>
+        <div class="field"><label for="aModel">Model</label><select id="aModel"><option value="auto">Automatic (recommended)</option>${modelValue(s) !== "auto" ? `<option value="${esc(modelValue(s))}" selected>${esc(modelValue(s))}</option>` : ""}</select>
+          <span class="hint" id="aChain">Automatic picks from the models your key can use and switches to the next one when a model is busy or out of free requests.</span></div>
         <div class="actions">${s.geminiKeyFrom === "settings" ? '<button class="btn danger left" data-action="ai-removekey">Remove key</button>' : ""}<button class="btn ghost" data-action="ai-test">Test</button><button class="btn" data-action="ai-savekey">Save</button></div>
         <p class="sub" id="aiTestOut"></p></div>
       <p class="sub">Free tier: Google may use what you send to Gemini to improve its products, so keep very private details out of chats. Cloudy sends your tasks, reminders, calendar for the next 7 days and recent headlines when you ask it something.</p>`;
@@ -966,6 +968,22 @@ async function openSettings(tab = "general") {
   }
   sheet("Settings", "", tabs + body);
   if (tab === "reminders") loadShortcutInfo();
+  if (tab === "ai" && s.hasGeminiKey) loadModels();
+}
+const modelValue = (s) => (!s.geminiModel || s.geminiModel === "gemini-flash-latest" ? "auto" : s.geminiModel);
+const prettyModel = (id) => String(id).replace(/^gemini-/, "Gemini ").replace(/-/g, " ").replace(/\bflash\b/i, "Flash").replace(/\blite\b/i, "Lite").replace(/\bpreview\b/i, "preview");
+async function loadModels() {
+  try {
+    const r = await api("/api/ai/models", { body: {} });
+    const sel = $("#aModel");
+    if (!sel) return;
+    const cur = modelValue(S.data.settings);
+    sel.innerHTML = `<option value="auto">Automatic (recommended)</option>` + r.models.map((m) => `<option value="${esc(m.id)}" ${m.id === cur ? "selected" : ""}>${esc(m.label || prettyModel(m.id))}${/flash-lite/.test(m.id) ? " · most free requests" : ""}</option>`).join("");
+    if (cur !== "auto" && !r.models.some((m) => m.id === cur)) sel.insertAdjacentHTML("beforeend", `<option value="${esc(cur)}" selected>${esc(cur)}</option>`);
+    $("#aChain").innerHTML = `Cloudy tries, in order:<br>Chat &amp; planning: ${r.smart.map(prettyModel).map(esc).join(" → ")}<br>Briefs &amp; summaries: ${r.light.map(prettyModel).map(esc).join(" → ")}${r.cooling.length ? `<br>Resting after a busy or limit message: ${r.cooling.map(prettyModel).map(esc).join(", ")}` : ""}`;
+  } catch (e) {
+    const el = $("#aChain"); if (el) el.textContent = e.message;
+  }
 }
 async function loadShortcutInfo() {
   try {
@@ -1121,7 +1139,7 @@ const ACTIONS = {
   },
   "cal-remove": async (b) => { await saveSettings({ calendars: S.data.settings.calendars.filter((c) => c.id !== b.dataset.id) }); delete S.cal.errors[b.dataset.id]; await loadCalendars(); openSettings("calendars"); },
   "ai-savekey": async () => {
-    const key = $("#aKey").value.trim(), model = $("#aModel").value.trim() || "gemini-flash-latest";
+    const key = $("#aKey").value.trim(), model = $("#aModel").value || "auto";
     await saveSettings(key ? { geminiKey: key, geminiModel: model } : { geminiModel: model });
     renderChips(); renderStrip(); toast("Saved");
     if (key) { maybeBrief(true); }
@@ -1130,8 +1148,8 @@ const ACTIONS = {
   "ai-removekey": async () => { await saveSettings({ geminiKey: "" }); renderChips(); openSettings("ai"); },
   "ai-test": async () => {
     $("#aiTestOut").textContent = "Testing…";
-    const r = await api("/api/ai/test", { body: { key: $("#aKey").value.trim() || undefined, model: $("#aModel").value.trim() } }).catch((e) => ({ ok: false, error: e.message }));
-    $("#aiTestOut").textContent = r.ok ? `✓ Gemini answered using ${r.model}. You’re all set.` : `✗ ${r.error}`;
+    const r = await api("/api/ai/test", { body: { key: $("#aKey").value.trim() || undefined, model: $("#aModel").value } }).catch((e) => ({ ok: false, error: e.message }));
+    $("#aiTestOut").textContent = r.ok ? `✓ Gemini answered using ${prettyModel(r.model)}. You’re all set.` : `✗ ${r.error}`;
   },
   "feed-add": async () => {
     let url = $("#nUrl").value.trim();

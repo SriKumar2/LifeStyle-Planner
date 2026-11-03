@@ -3,7 +3,7 @@
 export const DEFAULT_SETTINGS = {
   name: "lovely",
   timezone: "Asia/Kolkata",
-  geminiModel: "gemini-flash-latest",
+  geminiModel: "auto",
   calendars: [
     {
       id: "holidays-in",

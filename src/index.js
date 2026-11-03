@@ -2,7 +2,7 @@
 // and relays calendar/news feeds (the browser does the parsing, so the server stays within
 // Cloudflare's free-plan CPU limits).
 import { PlannerStore } from "./store.js";
-import { chat, brief, summarize, planWeek, testKey } from "./ai.js";
+import { chat, brief, summarize, planWeek, testKey, listModels, buildChain } from "./ai.js";
 
 export { PlannerStore };
 
@@ -82,6 +82,7 @@ async function route(request, env, url) {
     if (clean.calendars) clean.calendars = clean.calendars.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));
     if (clean.newsFeeds) clean.newsFeeds = clean.newsFeeds.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));
     await db.updateSettings(clean);
+    if ("geminiKey" in clean) { await db.deleteKV("gemini_models"); await db.deleteKV("gemini_cooldown"); }
     return json((await db.bootstrap()).settings);
   }
 
@@ -139,32 +140,62 @@ async function route(request, env, url) {
   // Gemini
   if (p.startsWith("/api/ai/") && m === "POST") {
     const settings = await db.getSettings();
-    const key = settings.geminiKey || (env.GEMINI_API_KEY && env.GEMINI_API_KEY !== "none" ? env.GEMINI_API_KEY : "");
-    const model = settings.geminiModel || "gemini-flash-latest";
     const input = await body(request);
-    if (p === "/api/ai/test") return json(await testKey(input.key || key, input.model || model));
+    const key = input.key || settings.geminiKey || (env.GEMINI_API_KEY && env.GEMINI_API_KEY !== "none" ? env.GEMINI_API_KEY : "");
+    // "gemini-flash-latest" was the old default; treat it as Automatic.
+    const preferred = input.model || (settings.geminiModel && settings.geminiModel !== "gemini-flash-latest" ? settings.geminiModel : "auto");
     if (!key) return json({ error: "Add your free Gemini API key in Settings → Cloudy (AI) first." }, 400);
-    const ai = { key, model, tz: settings.timezone, name: settings.name };
+
+    const models = await knownModels(db, key, !!input.key || p === "/api/ai/models");
+    const cool = (await db.getKV("gemini_cooldown")) || {};
+    const chainFor = (task) => {
+      const full = buildChain(models, preferred, task);
+      const ready = full.filter((m) => !(cool[m] > Date.now()));
+      return ready.length ? ready : full;
+    };
+    const remember = async (ai) => {
+      const now = Date.now();
+      const next = Object.fromEntries(Object.entries(cool).filter(([, t]) => t > now));
+      for (const f of ai.failures || []) next[f.model] = now + (f.status === 429 ? 60 : 2) * 60000;
+      if (ai.used) delete next[ai.used];
+      await db.setKV("gemini_cooldown", next);
+    };
+    const run = async (task, fn) => {
+      const ai = { key, chain: chainFor(task), tz: settings.timezone, name: settings.name };
+      try { return { ai, out: await fn(ai) }; }
+      finally { await remember(ai); }
+    };
+
+    if (p === "/api/ai/models") {
+      return json({ models, preferred, smart: buildChain(models, preferred, "smart"), light: buildChain(models, preferred, "light"), cooling: Object.keys(cool).filter((m) => cool[m] > Date.now()) });
+    }
+    if (p === "/api/ai/test") {
+      const r = await testKey(key, chainFor("light"));
+      return json(r);
+    }
     const data = await db.bootstrap();
     if (p === "/api/ai/chat") {
       const history = data.chat.slice(-12);
-      const reply = await chat(ai, data, input, history);
+      const { ai, out: reply } = await run("smart", (ai) => chat(ai, data, input, history));
       await db.create("chat", { role: "user", text: String(input.message || "").slice(0, 4000) });
-      const saved = await db.create("chat", { role: "model", text: reply });
-      return json({ reply, id: saved.id });
+      const saved = await db.create("chat", { role: "model", text: reply, model: ai.used });
+      return json({ reply, id: saved.id, model: ai.used });
     }
     if (p === "/api/ai/brief") {
-      const text = await brief(ai, data, input);
-      const b = { text, date: input.today, at: new Date().toISOString() };
+      const { ai, out: text } = await run("light", (ai) => brief(ai, data, input));
+      const b = { text, date: input.today, at: new Date().toISOString(), model: ai.used };
       await db.setKV("brief", b);
       return json(b);
     }
     if (p === "/api/ai/summarize") {
-      const text = await summarize(ai, input);
+      const { ai, out: text } = await run("light", (ai) => summarize(ai, input));
       if (input.newsId) await db.update(input.newsId, { summary: text });
-      return json({ summary: text });
+      return json({ summary: text, model: ai.used });
     }
-    if (p === "/api/ai/plan") return json(await planWeek(ai, data, input));
+    if (p === "/api/ai/plan") {
+      const { ai, out: plan } = await run("smart", (ai) => planWeek(ai, data, input));
+      return json({ ...plan, model: ai.used });
+    }
   }
   if (p === "/api/chat" && m === "DELETE") {
     await db.removeWhere("chat", () => true);
@@ -187,6 +218,19 @@ async function route(request, env, url) {
 }
 
 // ---------- helpers ----------
+// Which Gemini models this key can use, refreshed once a day.
+async function knownModels(db, key, fresh = false) {
+  const tag = key.slice(-6);
+  const cached = await db.getKV("gemini_models");
+  if (!fresh && cached && cached.tag === tag && Date.now() - cached.at < 86400000 && cached.models.length) return cached.models;
+  try {
+    const models = await listModels(key);
+    await db.setKV("gemini_models", { tag, at: Date.now(), models });
+    return models;
+  } catch {
+    return cached?.models || [];
+  }
+}
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...headers } });
 }
