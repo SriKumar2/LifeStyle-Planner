@@ -18,9 +18,12 @@ export const DEFAULT_SETTINGS = {
     { id: "hindu", section: "ca", name: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss" },
     { id: "ie-upsc", section: "ca", name: "Indian Express · UPSC", url: "https://indianexpress.com/section/upsc-current-affairs/feed/" },
     { id: "ie-explained", section: "ca", name: "Indian Express · Explained", url: "https://indianexpress.com/section/explained/feed/" },
-    { id: "drishti", section: "ca", name: "Drishti IAS", url: "https://news.google.com/rss/search?q=site:drishtiias.com&hl=en-IN&gl=IN&ceid=IN:en" },
-    { id: "barandbench", section: "legal", name: "Bar & Bench", url: "https://news.google.com/rss/search?q=site:barandbench.com&hl=en-IN&gl=IN&ceid=IN:en" },
-    { id: "livelaw", section: "legal", name: "LiveLaw", url: "https://news.google.com/rss/search?q=site:livelaw.in&hl=en-IN&gl=IN&ceid=IN:en" },
+    // Coaching sites and legal sites through Google News, limited to their English news pages from the last 7 days.
+    { id: "drishti", section: "ca", name: "Drishti IAS", url: "https://news.google.com/rss/search?q=site:drishtiias.com/daily-updates+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
+    { id: "visionias", section: "ca", name: "Vision IAS", url: "https://news.google.com/rss/search?q=site:visionias.in/current-affairs+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
+    { id: "vajiram", section: "ca", name: "Vajiram & Ravi", url: "https://news.google.com/rss/search?q=site:vajiramandravi.com/current-affairs+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
+    { id: "barandbench", section: "legal", name: "Bar & Bench", url: "https://news.google.com/rss/search?q=site:www.barandbench.com+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
+    { id: "livelaw", section: "legal", name: "LiveLaw", url: "https://news.google.com/rss/search?q=site:www.livelaw.in+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
     { id: "scc", section: "legal", name: "SCC Online", url: "https://news.google.com/rss/search?q=site:scconline.com&hl=en-IN&gl=IN&ceid=IN:en" },
   ],
   projects: [

@@ -77,7 +77,7 @@ async function route(request, env, url) {
 
   if (p === "/api/settings" && m === "PUT") {
     const patch = await body(request);
-    const allowed = ["name", "timezone", "theme", "geminiModel", "geminiKey", "calendars", "newsFeeds", "projects", "customRooms", "routineNotes"];
+    const allowed = ["name", "timezone", "theme", "geminiModel", "geminiKey", "calendars", "newsFeeds", "projects", "customRooms", "routineNotes", "feedsRev"];
     const clean = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)));
     if (clean.calendars) clean.calendars = clean.calendars.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));
     if (clean.newsFeeds) clean.newsFeeds = clean.newsFeeds.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));

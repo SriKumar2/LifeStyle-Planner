@@ -171,9 +171,27 @@ async function boot() {
   // Older installs: give the Study Desk project its new Syllabus room.
   const study = (S.data.settings.projects || []).find((p) => p.id === "study");
   if (study && (study.rooms.join() !== "syllabus")) saveSettings({ projects: S.data.settings.projects.map((p) => (p.id === "study" ? { ...p, rooms: ["syllabus", ...p.rooms.filter((r) => !["syllabus", "ili", "studylog"].includes(r))] } : p)) }).then(renderProjects).catch(() => {});
+  // Older installs: add Vision IAS and Vajiram & Ravi, and point Drishti, LiveLaw and Bar & Bench at their English news pages.
+  let feedsChanged = false;
+  if ((S.data.settings.feedsRev || 0) < 1) {
+    const want = {
+      drishti: { section: "ca", name: "Drishti IAS", url: "https://news.google.com/rss/search?q=site:drishtiias.com/daily-updates+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "drishtiias.com" },
+      visionias: { section: "ca", name: "Vision IAS", url: "https://news.google.com/rss/search?q=site:visionias.in/current-affairs+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "visionias.in" },
+      vajiram: { section: "ca", name: "Vajiram & Ravi", url: "https://news.google.com/rss/search?q=site:vajiramandravi.com/current-affairs+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "vajiramandravi.com" },
+      barandbench: { section: "legal", name: "Bar & Bench", url: "https://news.google.com/rss/search?q=site:www.barandbench.com+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "barandbench.com" },
+      livelaw: { section: "legal", name: "LiveLaw", url: "https://news.google.com/rss/search?q=site:www.livelaw.in+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "livelaw.in" },
+    };
+    const feeds = (S.data.settings.newsFeeds || []).map((f) => {
+      const w = Object.entries(want).find(([, v]) => f.url.includes("news.google.com") && f.url.includes(v.match));
+      return w ? { ...f, url: w[1].url } : f;
+    });
+    for (const [id, v] of Object.entries(want)) if (!feeds.some((f) => f.id === id || f.url.includes(v.match))) feeds.push({ id, section: v.section, name: v.name, url: v.url });
+    feedsChanged = true;
+    saveSettings({ newsFeeds: feeds, feedsRev: 1 }).then(() => refreshNews(false)).catch(() => {});
+  }
   renderAll();
   loadCalendars();
-  maybeRefreshNews();
+  if (!feedsChanged) maybeRefreshNews();
   maybeBrief();
 }
 

@@ -9,7 +9,7 @@ Cloud Nine puts your whole week on **one screen**: your Google and Apple calenda
 
 It runs in any web browser, **installs like a normal app on Windows**, and **adds to your iPhone home screen**. Everything stays in sync between devices.
 
-> The news headlines in these screenshots are samples. In the real app they come from PIB, The Hindu, Indian Express, Drishti IAS, Bar & Bench, LiveLaw and SCC Online.
+> The news headlines in these screenshots are samples. In the real app they come from PIB, The Hindu, Indian Express, Drishti IAS, Vision IAS, Vajiram & Ravi, Bar & Bench, LiveLaw and SCC Online.
 
 ---
 
