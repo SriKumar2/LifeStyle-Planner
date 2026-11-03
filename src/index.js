@@ -109,7 +109,7 @@ async function route(request, env, url) {
     const { items = [], status } = await body(request);
     const safe = items.slice(0, 300).map((it) => ({
       key: String(it.key || it.link || it.title).slice(0, 300),
-      section: it.section === "legal" ? "legal" : "ca",
+      section: ["legal", "leisure"].includes(it.section) ? it.section : "ca",
       source: String(it.source || "").slice(0, 80),
       title: String(it.title || "").slice(0, 400),
       link: String(it.link || "").slice(0, 1000),

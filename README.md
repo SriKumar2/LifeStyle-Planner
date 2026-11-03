@@ -37,7 +37,7 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **Daily routine**: plan your morning, afternoon, evening and night, tick steps off, keep a streak, and choose which days each step happens.
 - **Stickers**: drag hand-drawn line-art stickers (sea creatures, books, scales of justice…) onto any card, or upload your own.
 - **Reminders**, including the ones on your iPhone (through a small Apple Shortcut).
-- **News desk**: English current affairs for government exams and legal news, with AI summaries.
+- **News desk**: English current affairs for government exams, legal news, and a Leisure tab for Substack newsletters, with AI summaries.
 - **Habits** tracker, a daily mood check-in and routine notes.
 - **Countdowns** to exams, deadlines and special days.
 - **Second brain**: projects with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.

@@ -134,7 +134,7 @@ function context(data, extra = {}) {
     lines.push("Habits this week: " + data.habits.map((h) => `${h.name} ${done(h)}/7`).join(", "));
   }
   const news = data.news.slice(0, 20);
-  if (news.length) lines.push("Latest headlines in the news desk:\n" + news.map((n) => `- [${n.section === "legal" ? "legal" : "current affairs"}] ${n.source}: ${n.title}`).join("\n"));
+  if (news.length) lines.push("Latest headlines in the news desk:\n" + news.map((n) => `- [${n.section === "legal" ? "legal" : n.section === "leisure" ? "leisure reading" : "current affairs"}] ${n.source}: ${n.title}`).join("\n"));
   return lines.join("\n\n");
 }
 

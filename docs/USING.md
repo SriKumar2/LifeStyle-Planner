@@ -54,9 +54,10 @@ The first thing on Home: a **weekly list** box for anything without a day, then 
 
 ## News desk
 
-- On the **News** page. **Current affairs** and **Legal** tabs fill up when you open the app (at most every 3 hours) or when you press **Refresh**.
+- On the **News** page. **Current affairs**, **Legal** and **Leisure** tabs fill up when you open the app (at most every 3 hours) or when you press **Refresh**.
 - Only **English** headlines are shown. Headlines in Hindi or other Indian scripts are skipped.
 - Sources: **Current affairs** comes from PIB, The Hindu, Indian Express (UPSC and Explained), Drishti IAS, Vision IAS and Vajiram & Ravi. **Legal** comes from Bar & Bench, LiveLaw and SCC Online. The coaching and legal sites show only their English news pages from the last 7 days.
+- **Leisure** is for fun reading from **Substack** newsletters. It starts with Austin Kleon (creativity and art) and Plum Sykes (fashion and lifestyle). To add one you like, go to **Settings → News**, paste its link (for example `plumsykes.substack.com` or `substack.com/@plumsykes`), choose **Leisure**, and press **Add source**. Remove any you don’t want from the same list.
 - **✨ summarise** asks Cloudy for three key points and why the story matters.
 - Add or remove sources in **Settings → News**. Typing just a website, such as `vedantu.com`, follows it through Google News.
 

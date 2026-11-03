@@ -25,6 +25,9 @@ export const DEFAULT_SETTINGS = {
     { id: "barandbench", section: "legal", name: "Bar & Bench", url: "https://news.google.com/rss/search?q=site:www.barandbench.com+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
     { id: "livelaw", section: "legal", name: "LiveLaw", url: "https://news.google.com/rss/search?q=site:www.livelaw.in+when:7d&hl=en-IN&gl=IN&ceid=IN:en" },
     { id: "scc", section: "legal", name: "SCC Online", url: "https://news.google.com/rss/search?q=site:scconline.com&hl=en-IN&gl=IN&ceid=IN:en" },
+    // Leisure reading: Substack newsletters. Add your own in Settings → News.
+    { id: "sub-kleon", section: "leisure", name: "Austin Kleon", url: "https://austinkleon.substack.com/feed" },
+    { id: "sub-plum", section: "leisure", name: "Plum Sykes", url: "https://plumsykes.substack.com/feed" },
   ],
   projects: [
     { id: "soft", name: "Soft Living", color: "mint", icon: "leaf", rooms: ["library", "workouts"] },

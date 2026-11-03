@@ -173,7 +173,9 @@ async function boot() {
   if (study && (study.rooms.join() !== "syllabus")) saveSettings({ projects: S.data.settings.projects.map((p) => (p.id === "study" ? { ...p, rooms: ["syllabus", ...p.rooms.filter((r) => !["syllabus", "ili", "studylog"].includes(r))] } : p)) }).then(renderProjects).catch(() => {});
   // Older installs: add Vision IAS and Vajiram & Ravi, and point Drishti, LiveLaw and Bar & Bench at their English news pages.
   let feedsChanged = false;
-  if ((S.data.settings.feedsRev || 0) < 1) {
+  const rev = S.data.settings.feedsRev || 0;
+  let feeds = S.data.settings.newsFeeds || [];
+  if (rev < 1) {
     const want = {
       drishti: { section: "ca", name: "Drishti IAS", url: "https://news.google.com/rss/search?q=site:drishtiias.com/daily-updates+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "drishtiias.com" },
       visionias: { section: "ca", name: "Vision IAS", url: "https://news.google.com/rss/search?q=site:visionias.in/current-affairs+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "visionias.in" },
@@ -181,13 +183,17 @@ async function boot() {
       barandbench: { section: "legal", name: "Bar & Bench", url: "https://news.google.com/rss/search?q=site:www.barandbench.com+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "barandbench.com" },
       livelaw: { section: "legal", name: "LiveLaw", url: "https://news.google.com/rss/search?q=site:www.livelaw.in+when:7d&hl=en-IN&gl=IN&ceid=IN:en", match: "livelaw.in" },
     };
-    const feeds = (S.data.settings.newsFeeds || []).map((f) => {
+    feeds = feeds.map((f) => {
       const w = Object.entries(want).find(([, v]) => f.url.includes("news.google.com") && f.url.includes(v.match));
       return w ? { ...f, url: w[1].url } : f;
     });
     for (const [id, v] of Object.entries(want)) if (!feeds.some((f) => f.id === id || f.url.includes(v.match))) feeds.push({ id, section: v.section, name: v.name, url: v.url });
+  }
+  // Older installs: add the Leisure reading section with two Substack newsletters to start.
+  if (rev < 2 && !feeds.some((f) => f.section === "leisure")) feeds = [...feeds, { id: "sub-kleon", section: "leisure", name: "Austin Kleon", url: "https://austinkleon.substack.com/feed" }, { id: "sub-plum", section: "leisure", name: "Plum Sykes", url: "https://plumsykes.substack.com/feed" }];
+  if (rev < 2) {
     feedsChanged = true;
-    saveSettings({ newsFeeds: feeds, feedsRev: 1 }).then(() => refreshNews(false)).catch(() => {});
+    saveSettings({ newsFeeds: feeds, feedsRev: 2 }).then(() => refreshNews(false)).catch(() => {});
   }
   renderAll();
   loadCalendars();
@@ -669,6 +675,15 @@ document.addEventListener("submit", async (e) => {
 });
 
 /* ============================== news ============================== */
+// "plumsykes.substack.com", "https://plumsykes.substack.com/p/…" or "substack.com/@plumsykes" → that newsletter's feed.
+function substackFeed(input) {
+  const s = String(input || "").trim();
+  let m = s.match(/substack\.com\/@([a-z0-9-]+)/i);
+  if (m) return `https://${m[1].toLowerCase()}.substack.com/feed`;
+  m = s.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.substack\.com/i);
+  if (m && m[1].toLowerCase() !== "www") return `https://${m[1].toLowerCase()}.substack.com/feed`;
+  return "";
+}
 // Keep English headlines only: drop anything written in an Indian script, and Hindi sections of sites.
 const INDIC = /[\u0900-\u0DFF]/;
 const isEnglish = (n) => !INDIC.test(n.title || "") && !/\/hindi\/|\/\/hindi\./i.test(n.link || "");
@@ -688,7 +703,7 @@ function renderNews() {
         <div class="news-actions"><button class="mini" data-action="news-sum" data-id="${esc(n.id)}">${n.summary ? (n.showSum ? "hide summary" : "show summary") : "✨ summarise"}</button></div>
         ${n.summary && n.showSum ? `<div class="summary">${md(n.summary)}</div>` : ""}</div>`).join("")
       + (list.length > base ? `<button class="link" data-action="news-more" style="margin-top:6px">${S.newsMore ? "show fewer" : `show more (${Math.min(list.length, 30) - base})`}</button>` : "")
-    : `<p class="empty">No headlines yet. Press Refresh.</p>`;
+    : `<p class="empty">${S.newsTab === "leisure" ? "Nothing to read yet. Press Refresh, or add a Substack newsletter in Settings → News." : "No headlines yet. Press Refresh."}</p>`;
   const st = S.data.status.news;
   $("#newsStatus").textContent = st ? `updated ${ago(st.at)}${st.failed?.length ? ` · ${st.failed.length} source${st.failed.length > 1 ? "s" : ""} didn’t answer` : ""}` : "";
 }
@@ -1011,10 +1026,10 @@ async function openSettings(tab = "general") {
   }
   if (tab === "news") {
     body = `<p class="sub">Headlines are fetched when you open the app (at most every 3 hours) or when you press Refresh. Sources without their own feed are read through Google News.</p>
-      ${(s.newsFeeds || []).map((f) => `<div class="rowline"><span class="tag" style="background:var(--${f.section === "legal" ? "powder" : "periwinkle"})">${f.section === "legal" ? "Legal" : "Current affairs"}</span><b style="flex:1">${esc(f.name)}</b><button class="mini" data-action="feed-remove" data-id="${esc(f.id)}">Remove</button></div>`).join("")}
+      ${(s.newsFeeds || []).map((f) => `<div class="rowline"><span class="tag" style="background:var(--${({ legal: "powder", leisure: "mint" })[f.section] || "periwinkle"})">${({ legal: "Legal", leisure: "Leisure" })[f.section] || "Current affairs"}</span><b style="flex:1">${esc(f.name)}</b><button class="mini" data-action="feed-remove" data-id="${esc(f.id)}">Remove</button></div>`).join("")}
       <div class="box"><h3>Add a source</h3>
-        <div class="grid2"><div class="field"><label for="nName">Name</label><input id="nName" placeholder="Vedantu"></div><div class="field"><label for="nSec">Section</label><select id="nSec"><option value="ca">Current affairs</option><option value="legal">Legal</option></select></div></div>
-        <div class="field"><label for="nUrl">Feed link, or a website</label><input id="nUrl" placeholder="https://… /feed   or   vedantu.com"><span class="hint">If you type just a website, Cloud Nine follows it through Google News.</span></div>
+        <div class="grid2"><div class="field"><label for="nName">Name</label><input id="nName" placeholder="Vedantu"></div><div class="field"><label for="nSec">Section</label><select id="nSec"><option value="ca">Current affairs</option><option value="legal">Legal</option><option value="leisure">Leisure</option></select></div></div>
+        <div class="field"><label for="nUrl">Feed link, or a website</label><input id="nUrl" placeholder="https://… /feed   or   vedantu.com   or   a Substack link"><span class="hint">If you type just a website, Cloud Nine follows it through Google News. For a <b>Substack</b> newsletter, paste its link (for example <i>plumsykes.substack.com</i> or <i>substack.com/@plumsykes</i>) and choose <b>Leisure</b>.</span></div>
         <div class="actions"><button class="btn" data-action="feed-add">Add source</button></div></div>`;
   }
   if (tab === "backup") {
@@ -1238,10 +1253,14 @@ const ACTIONS = {
     $("#aiTestOut").textContent = r.ok ? `✓ Gemini answered using ${prettyModel(r.model)}. You’re all set.` : `✗ ${r.error}`;
   },
   "feed-add": async () => {
+    if (!$("#nName").value.trim() && substackFeed($("#nUrl").value)) $("#nName").value = substackFeed($("#nUrl").value).replace(/^https:\/\/|\.substack\.com\/feed$/g, "");
     let url = $("#nUrl").value.trim();
     const name = $("#nName").value.trim() || url;
     if (!url) return;
-    if (!/^https?:\/\//i.test(url)) url = `https://news.google.com/rss/search?q=site:${encodeURIComponent(url.replace(/^www\./, "").replace(/\/.*$/, ""))}&hl=en-IN&gl=IN&ceid=IN:en`;
+    const sub = substackFeed(url);
+    if (sub) url = sub;
+    else if (!/^https?:\/\//i.test(url) && $("#nSec").value === "leisure") url = `https://${url.replace(/\/.*$/, "")}/feed`;
+    else if (!/^https?:\/\//i.test(url)) url = `https://news.google.com/rss/search?q=site:${encodeURIComponent(url.replace(/^www\./, "").replace(/\/.*$/, ""))}&hl=en-IN&gl=IN&ceid=IN:en`;
     await saveSettings({ newsFeeds: [...(S.data.settings.newsFeeds || []), { id: "feed-" + crypto.randomUUID().slice(0, 8), name, section: $("#nSec").value, url }] });
     openSettings("news"); refreshNews(true);
   },
