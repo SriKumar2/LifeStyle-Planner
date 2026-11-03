@@ -114,6 +114,12 @@ export class PlannerStore extends DurableObject {
       countdowns: this.list("countdown"),
       events: this.list("event"),
       items: this.list("item"),
+      subjects: this.list("subject").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+      topics: this.list("topic"),
+      weekplans: this.list("weekplan"),
+      assignments: this.list("assignment"),
+      stickers: this.list("sticker"),
+      stickerimgs: this.list("stickerimg"),
       news: this.listRecent("news", 120),
       chat: this.listRecent("chat", 40).reverse(),
       status: {

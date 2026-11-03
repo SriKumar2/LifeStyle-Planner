@@ -108,6 +108,17 @@ function context(data, extra = {}) {
   if (rem.length) lines.push("Open reminders:\n" + rem.map((r) => `- ${r.title}${r.due ? " (due " + r.due + ")" : ""}`).join("\n"));
   if (extra.events?.length) lines.push("Calendar, next 7 days:\n" + extra.events.slice(0, 40).map((e) => `- ${e}`).join("\n"));
   if (data.countdowns.length) lines.push("Countdowns:\n" + data.countdowns.map((c) => `- ${c.title}: ${c.date}`).join("\n"));
+  const subjects = data.subjects || [];
+  if (subjects.length) {
+    lines.push("Syllabus:\n" + subjects.map((s) => {
+      const ts = (data.topics || []).filter((t) => t.subjectId === s.id);
+      const done = ts.filter((t) => ["done", "revised"].includes(t.status)).length;
+      const open = ts.filter((t) => !["done", "revised"].includes(t.status)).slice(0, 15).map((t) => `${t.unit ? t.unit + ": " : ""}${t.title}${t.status === "reading" ? " (reading)" : ""}`);
+      return `- ${s.name}${s.exam ? " (exam " + s.exam + ")" : ""}: ${done}/${ts.length} topics done.${open.length ? " Still to finish: " + open.join("; ") : ""}`;
+    }).join("\n"));
+  }
+  const due = (data.assignments || []).filter((a) => !a.done);
+  if (due.length) lines.push("Assignments and deadlines:\n" + due.slice(0, 20).map((a) => `- ${a.title}${a.due ? " due " + a.due : ""} (priority ${a.priority || "M"})`).join("\n"));
   const ili = data.items.filter((i) => i.room === "ili" && i.status !== "Done");
   if (ili.length) lines.push("ILI diploma topics not done:\n" + ili.slice(0, 20).map((i) => `- ${i.title}${i.date ? " (target " + i.date + ")" : ""}${i.progress ? " " + i.progress + "%" : ""}`).join("\n"));
   const certs = data.items.filter((i) => i.room === "certs" && ["Enrolled", "Studying"].includes(i.status));

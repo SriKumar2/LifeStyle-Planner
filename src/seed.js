@@ -25,7 +25,7 @@ export const DEFAULT_SETTINGS = {
   ],
   projects: [
     { id: "soft", name: "Soft Living", color: "mint", icon: "leaf", rooms: ["library", "workouts"] },
-    { id: "study", name: "Study Desk", color: "ice", icon: "book", rooms: ["ili", "studylog"] },
+    { id: "study", name: "Study Desk", color: "ice", icon: "book", rooms: ["syllabus", "ili", "studylog"] },
     { id: "growth", name: "Growth Lab", color: "periwinkle", icon: "cap", rooms: ["certs", "ideas"] },
   ],
   customRooms: [],

@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,500&family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,500&family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Figtree:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/app.css">
 <script>
   try { const t = localStorage.getItem("cn-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -43,8 +43,10 @@
     <button data-action="scroll" data-to="top" aria-label="Home" title="Home" class="on"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></button>
     <button data-action="scroll" data-to="calCard" aria-label="Calendar" title="Calendar"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
     <button data-action="scroll" data-to="focusCard" aria-label="Study" title="Today’s study"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg></button>
+    <button data-action="scroll" data-to="studyCard" aria-label="Study planner" title="Study planner &amp; syllabus"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6h10M4 12h10M4 18h7M17 5l2 2 3-3M17 11l2 2 3-3"/></svg></button>
     <button data-action="scroll" data-to="brainSec" aria-label="Projects" title="Second brain"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg></button>
     <div class="spacer"></div>
+    <button data-action="decorate" aria-label="Decorate with stickers" title="Decorate with stickers"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.2 5.6L20 9.3l-4.5 3.8 1.4 5.9L12 15.9 7.1 19l1.4-5.9L4 9.3l5.8-.7z"/></svg></button>
     <button data-action="ai-open" aria-label="Ask Cloudy" title="Ask Cloudy (Ctrl+K)"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8zM18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
     <button data-action="settings" aria-label="Settings" title="Settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4.4l-.4 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4.4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></button>
   </nav>
@@ -54,7 +56,7 @@
       <svg width="150" height="150" viewBox="-50 -50 100 100"><g fill="var(--asterisk)"><rect x="-7" y="-46" width="14" height="92" rx="7"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(45)"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(90)"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(135)"/></g></svg>
     </div>
 
-    <header class="head">
+    <header class="head" data-anchor="head">
       <div class="hello">
         <div class="date num" id="today"></div>
         <h1 id="greeting"></h1>
@@ -66,10 +68,10 @@
       </div>
     </header>
 
-    <div class="strip" id="strip"></div>
+    <div class="strip" id="strip" data-anchor="strip"></div>
 
     <section class="board">
-      <article class="card cal" id="calCard" aria-labelledby="calT">
+      <article class="card cal" id="calCard" data-anchor="cal" aria-labelledby="calT">
         <div class="card-head">
           <div><h2 id="calT">this <em id="calWord">week</em></h2><div class="sub num" id="calSub"></div></div>
           <div class="cal-tools">
@@ -84,7 +86,7 @@
         <div class="cal-scroll" id="calBody"></div>
       </article>
 
-      <article class="card focus" id="focusCard" aria-labelledby="focT">
+      <article class="card focus" id="focusCard" data-anchor="focus" aria-labelledby="focT">
         <div class="card-head"><h2 id="focT">today’s <em>focus</em></h2><button class="link" data-action="plan-open">✨ plan my week</button></div>
         <div class="focus-top" id="focusTop"></div>
         <div id="focusList"></div>
@@ -99,7 +101,7 @@
         </form>
       </article>
 
-      <article class="card remind" aria-labelledby="remT">
+      <article class="card remind" data-anchor="remind" aria-labelledby="remT">
         <div class="card-head"><h2 id="remT">reminders</h2><span class="sub" id="remSub"></span></div>
         <div id="remList"></div>
         <form class="add" id="remForm">
@@ -111,14 +113,14 @@
         </form>
       </article>
 
-      <article class="card todo" aria-labelledby="todoT">
+      <article class="card todo" data-anchor="todo" aria-labelledby="todoT">
         <div class="card-head"><h2 id="todoT">weekly <em>to-do</em></h2><span class="sub num" id="todoSub"></span></div>
         <div class="days" id="days" role="group" aria-label="Pick a day"></div>
         <div id="todoList"></div>
         <form class="add" id="todoForm"><label for="todoTitle" class="vh">New task</label><input id="todoTitle" placeholder="add something for this day…" autocomplete="off"><button class="btn" type="submit">Add</button></form>
       </article>
 
-      <article class="card news" aria-labelledby="newsT">
+      <article class="card news" data-anchor="news" aria-labelledby="newsT">
         <div class="card-head">
           <h2 id="newsT">news <em>desk</em></h2>
           <div class="seg" role="group" aria-label="News type">
@@ -131,13 +133,28 @@
         <div class="news-foot"><span class="sub" id="newsStatus"></span><button class="mini" data-action="news-refresh">Refresh</button></div>
       </article>
 
-      <article class="card habit" aria-labelledby="habT">
-        <div class="card-head"><h2 id="habT">habits</h2><button class="link" data-action="settings" data-tab="habits">edit habits</button></div>
+      <article class="card habit" data-anchor="habit" aria-labelledby="habT">
+        <div class="card-head"><h2 id="habT">daily <em>rituals</em></h2><button class="link" data-action="settings" data-tab="habits">edit habits</button></div>
         <div class="hgrid" id="hgrid"></div>
         <div class="mood" id="mood" role="group" aria-label="Today’s mood"></div>
+        <p class="motto">remember, <em>consistency</em> over perfection.</p>
       </article>
 
-      <section class="brain" id="brainSec" aria-labelledby="brainT">
+      <article class="card study" id="studyCard" data-anchor="study" aria-labelledby="studyT">
+        <div class="card-head">
+          <div><h2 id="studyT">study <em>planner</em></h2><div class="sub num" id="studySub"></div></div>
+          <div class="cal-tools">
+            <div class="seg" role="group" aria-label="Study planner view">
+              <button aria-pressed="true" data-action="study-tab" data-tab="week">This week</button>
+              <button aria-pressed="false" data-action="study-tab" data-tab="syllabus">Syllabus</button>
+              <button aria-pressed="false" data-action="study-tab" data-tab="deadlines">Deadlines</button>
+            </div>
+          </div>
+        </div>
+        <div id="studyBody"></div>
+      </article>
+
+      <section class="brain" id="brainSec" data-anchor="brain" aria-labelledby="brainT">
         <div class="brain-head"><h2 id="brainT">second <em>brain</em></h2><button class="link" data-action="project-new">+ new project</button></div>
         <div class="projects" id="projects"></div>
       </section>
@@ -148,7 +165,7 @@
   <nav class="tabbar" aria-label="Sections">
     <button data-action="scroll" data-to="top"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Home</button>
     <button data-action="scroll" data-to="calCard"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Calendar</button>
-    <button data-action="scroll" data-to="focusCard"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>Study</button>
+    <button data-action="scroll" data-to="studyCard"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>Study</button>
     <button data-action="ai-open"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>Cloudy</button>
     <button data-action="settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</button>
   </nav>
@@ -179,6 +196,18 @@
     <div class="sheet-body" id="sheetBody"></div>
   </div>
 </div>
+
+<!-- Sticker tray (decorate mode) -->
+<aside class="tray" id="tray" aria-label="Stickers" hidden>
+  <div class="tray-head">
+    <b>✿ decorate</b><span class="sub">tap a sticker to add it, then drag it anywhere. Drag the corner dot to resize.</span>
+    <label class="mini upl" for="stickerFile">＋ upload your own</label>
+    <input id="stickerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+    <label class="sub nowhite"><input type="checkbox" id="stickerNoWhite" checked> remove white background</label>
+    <button class="btn sm" data-action="decorate">Done</button>
+  </div>
+  <div class="tray-items" id="trayItems"></div>
+</aside>
 
 <div class="toast" id="toast" role="status"></div>
 <script type="module" src="/app.js"></script>

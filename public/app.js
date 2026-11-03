@@ -1,5 +1,6 @@
 // Cloud Nine front end. Plain JavaScript, no build step.
 import ICAL from "/vendor/ical.min.js";
+import { STICKERS } from "/stickers-art.js";
 
 const GUIDE_URL = "https://github.com/SriKumar2/LifeStyle-Planner/tree/main/docs";
 const HOUR_PX = 46;
@@ -89,7 +90,7 @@ async function api(path, { method, body } = {}) {
   if (!res.ok) throw new Error((data && data.error) || `Something went wrong (${res.status})`);
   return data;
 }
-const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat" };
+const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs" };
 async function add(kind, data, id) {
   const doc = await api("/api/docs", { body: { kind, data, id } });
   const arr = S.data[COLL[kind]];
@@ -158,6 +159,12 @@ async function boot() {
   }
   $("#login").hidden = true;
   $("#app").hidden = false;
+  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs"]) S.data[k] ||= [];
+  // Use the look chosen on another device, unless this device picked its own.
+  if (S.data.settings.theme && (document.documentElement.dataset.theme || "system") !== S.data.settings.theme) setTheme(S.data.settings.theme, false);
+  // Older installs: give the Study Desk project its new Syllabus room.
+  const study = (S.data.settings.projects || []).find((p) => p.id === "study");
+  if (study && !study.rooms.includes("syllabus")) saveSettings({ projects: S.data.settings.projects.map((p) => (p.id === "study" ? { ...p, rooms: ["syllabus", ...p.rooms] } : p)) }).then(renderProjects).catch(() => {});
   renderAll();
   loadCalendars();
   maybeRefreshNews();
@@ -181,7 +188,7 @@ document.addEventListener("visibilitychange", async () => {
 
 function renderAll() {
   renderHeader(); renderChips(); renderStrip(); renderCalendar(); renderFocus(); renderReminders();
-  renderTodo(); renderNews(); renderHabits(); renderMood(); renderProjects(); renderChat();
+  renderTodo(); renderNews(); renderHabits(); renderMood(); renderStudy(); renderProjects(); renderChat(); renderStickers();
 }
 
 /* ============================== header ============================== */
@@ -209,9 +216,10 @@ function renderChips() {
   $("#chips").innerHTML = chips.join("");
 }
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
-function setTheme(t) {
+function setTheme(t, sync = true) {
   if (t === "system") { delete document.documentElement.dataset.theme; try { localStorage.removeItem("cn-theme"); } catch {} }
   else { document.documentElement.dataset.theme = t; try { localStorage.setItem("cn-theme", t); } catch {} }
+  if (sync && S.data && S.data.settings.theme !== t) saveSettings({ theme: t }).catch(() => {});
   renderChips();
 }
 
@@ -225,6 +233,8 @@ function localBrief() {
   const parts = [];
   parts.push(tasks.length ? `${tasks.length} study block${tasks.length > 1 ? "s" : ""} left today (${Math.floor(mins / 60) ? Math.floor(mins / 60) + " h " : ""}${mins % 60} min)` : "No study blocks planned for today yet");
   if (due.length) parts.push(`${due.length} reminder${due.length > 1 ? "s" : ""} due today`);
+  const soon = (S.data.assignments || []).filter((a) => !a.done && a.due && daysBetween(new Date(), parseYmd(a.due)) <= 7 && daysBetween(new Date(), parseYmd(a.due)) >= 0).length;
+  if (soon) parts.push(`${soon} deadline${soon > 1 ? "s" : ""} in the next 7 days`);
   if (toRevise) parts.push(`${toRevise} saved headline${toRevise > 1 ? "s" : ""} to revise`);
   return parts.join(" · ");
 }
@@ -321,8 +331,14 @@ function localEvents(from, to) {
     return { id: e.id, title: e.title, location: e.location || "", description: e.notes || "", start, end, allDay, color: e.color || "ice", source: "My events", external: false };
   }).filter((o) => o.end > from && o.start < to);
 }
+function deadlineEvents(from, to) {
+  return (S.data.assignments || []).filter((a) => a.due && !a.done).map((a) => {
+    const d = parseYmd(a.due);
+    return { title: "📝 " + a.title, start: d, end: addDays(d, 1), allDay: true, color: "powder", source: "Deadlines", deadline: true };
+  }).filter((o) => o.end > from && o.start < to);
+}
 function eventsBetween(from, to) {
-  const out = localEvents(from, to);
+  const out = [...localEvents(from, to), ...deadlineEvents(from, to)];
   for (const src of S.data.settings.calendars) {
     const parsed = S.cal.sources.get(src.id);
     if (parsed) out.push(...expandSource(parsed.events, src, from, to));
@@ -453,6 +469,7 @@ function openEvent(e) {
   const when = e.allDay
     ? (daysBetween(e.start, e.end) > 1 ? `${fmtDay(e.start)} – ${fmtDay(addDays(e.end, -1))}` : `${fmtDay(e.start)} · all day`)
     : `${fmtDay(e.start)} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
+  if (e.deadline) { closeSheet(); S.study.tab = "deadlines"; renderStudy(); return $("#studyCard").scrollIntoView({ behavior: "smooth" }); }
   if (!e.external) return openEventEditor(S.data.events.find((x) => x.id === e.id));
   sheet(e.title, e.source, `
     <div class="box"><p><b>${esc(when)}</b></p>${e.location ? `<p>📍 ${esc(e.location)}</p>` : ""}${e.description ? `<p style="white-space:pre-wrap">${esc(e.description.slice(0, 1500))}</p>` : ""}</div>
@@ -514,8 +531,7 @@ function renderFocus() {
   $("#focusList").innerHTML = list.length
     ? list.map((x) => `<div class="task${x.done ? " done" : ""}${T.taskId === x.id && T.id ? " running" : ""}">
         <button class="check" data-action="task-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button>
-        <div class="t"><div>${esc(x.title)}</div><div class="meta num">${x.minutes ? x.minutes + " min" : ""}${x.date !== todayYmd() ? ` <span class="overdue">· carried over from ${fmtDay(parseYmd(x.date))}</span>` : ""}</div></div>
-        <span class="tag" style="background:var(--${SUBJECT_COLOR[x.subject] || "ice"})">${esc(x.subject || "Study")}</span>
+        <div class="t"><div>${esc(x.title)}</div><div class="meta num"><span class="tag" style="background:var(--${SUBJECT_COLOR[x.subject] || subjColor(x.subject) || "ice"})">${esc(x.subject || "Study")}</span> ${x.minutes ? x.minutes + " min" : ""}${x.date !== todayYmd() ? ` <span class="overdue">· carried over from ${fmtDay(parseYmd(x.date))}</span>` : ""}</div></div>
         ${x.done ? "" : `<button class="play" data-action="timer-start" data-id="${esc(x.id)}" aria-label="Start a 25-minute focus timer"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></button>`}
         <button class="del" data-action="task-delete" data-id="${esc(x.id)}" aria-label="Delete">✕</button></div>`).join("")
     : `<p class="empty">Add a study task below, or let Cloudy plan your week.</p>`;
@@ -737,6 +753,7 @@ const ROOMS = {
     { k: "link", l: "Resource link", t: "url" },
     { k: "notes", l: "Notes", t: "textarea" }] },
   studylog: { name: "Saved headlines (revision log)", special: "news" },
+  syllabus: { name: "Syllabus & subjects", special: "syllabus" },
   certs: { name: "Certifications", statusKey: "status", fields: [
     { k: "provider", l: "Provider", t: "text" },
     { k: "area", l: "Area", t: "text" },
@@ -783,6 +800,10 @@ function roomSummary(id) {
     return (papers.length ? papers.map((p, k) => bar(`ILI · ${p}`, prog(p) + "%", prog(p), k ? "powder" : "sky")).join("") : rowHtml("ILI planner", "add your syllabus"))
       + (next ? rowHtml("Next target", `${next.title} · ${fmtDay(parseYmd(next.date))}`, 'style="color:var(--rose)"') : "");
   }
+  if (id === "syllabus") {
+    const subs = (S.data.subjects || []).slice(0, 2);
+    return subs.length ? subs.map((s, k) => { const pr = subjectProgress(s.id); return bar(s.name, pr.pct + "%", pr.pct, s.color || (k ? "powder" : "sky")); }).join("") : rowHtml("Syllabus", "add your subjects");
+  }
   if (id === "studylog") {
     const saved = S.data.news.filter((n) => n.saved);
     return rowHtml("Saved headlines", `${saved.length} · ${saved.filter((n) => !n.revised).length} to revise`);
@@ -806,6 +827,7 @@ function renderProjects() {
 function openRoom(id) {
   const r = room(id);
   if (!r) return;
+  if (r.special === "syllabus") { closeSheet(); S.study.tab = "syllabus"; renderStudy(); return $("#studyCard").scrollIntoView({ behavior: "smooth" }); }
   if (r.special === "news") {
     const saved = S.data.news.filter((n) => n.saved);
     return sheet(r.name, `${saved.length} saved`, saved.length
@@ -921,7 +943,7 @@ async function openSettings(tab = "general") {
   if (tab === "general") {
     const theme = document.documentElement.dataset.theme || "system";
     body = `<div class="field"><label for="sName">What should Cloud Nine call you?</label><input id="sName" value="${esc(s.name || "")}"></div>
-      <div class="field"><label for="sTheme">Look</label><select id="sTheme"><option value="system" ${theme === "system" ? "selected" : ""}>Match my device</option><option value="light" ${theme === "light" ? "selected" : ""}>Ocean milk (day)</option><option value="dark" ${theme === "dark" ? "selected" : ""}>Deep ocean (night)</option></select></div>
+      <div class="field"><label for="sTheme">Look</label><select id="sTheme"><option value="system" ${theme === "system" ? "selected" : ""}>Match my device</option><option value="light" ${theme === "light" ? "selected" : ""}>Ocean milk (day)</option><option value="dark" ${theme === "dark" ? "selected" : ""}>Deep ocean (night)</option><option value="ink" ${theme === "ink" ? "selected" : ""}>Ink &amp; paper (navy on cream)</option></select></div>
       <div class="actions"><button class="btn ghost left" data-action="logout">Sign out</button><button class="btn" data-action="save-general">Save</button></div>
       <div class="box"><h3>Install the app</h3><p><b>Windows:</b> in Edge, open the ⋯ menu → Apps → Install this site as an app. In Chrome, use the install icon at the right of the address bar.</p><p><b>iPhone:</b> open this page in Safari → Share → Add to Home Screen.</p><p><a href="${GUIDE_URL}" target="_blank" rel="noopener">Full step-by-step guide ↗</a></p></div>`;
   }
@@ -1181,6 +1203,446 @@ document.addEventListener("change", async (e) => {
   if (el.dataset.actionChange === "habit-color") await patch(h, { color: el.value });
   renderHabits();
 });
+
+/* ============================== study planner ============================== */
+S.study = { tab: "week", offset: 0, subject: null, addDay: null };
+const STATUSES = [["todo", "to study"], ["reading", "reading"], ["done", "done"], ["revised", "revised"]];
+const subjColor = (name) => (S.data.subjects || []).find((s) => s.name === name)?.color;
+const wpId = () => `wp:${weekDates(S.study.offset)[0]}`;
+function weekPlan() {
+  return S.data.weekplans.find((w) => w.id === wpId()) || { id: wpId(), priorities: ["", "", ""], prioDone: [false, false, false], goals: [], targetHours: 20, well: "", improve: "", notes: "" };
+}
+let wpTimer = null;
+function saveWeekPlan(p, now = false) {
+  const cur = weekPlan();
+  Object.assign(cur, p);
+  if (!S.data.weekplans.includes(cur)) S.data.weekplans.push(cur);
+  clearTimeout(wpTimer);
+  const go = () => api("/api/docs", { body: { kind: "weekplan", id: cur.id, data: { priorities: cur.priorities, prioDone: cur.prioDone, goals: cur.goals, targetHours: cur.targetHours, well: cur.well, improve: cur.improve, notes: cur.notes } } }).catch((e) => toast(e.message));
+  if (now) go(); else wpTimer = setTimeout(go, 600);
+}
+function taskMinutes(t) { return t.done ? Math.max(+t.minutes || 0, +t.focusMinutes || 0) : (+t.focusMinutes || 0); }
+const hrs = (m) => (Math.round((m / 60) * 10) / 10).toString();
+function topicsOf(id) { return S.data.topics.filter((t) => t.subjectId === id).sort((a, b) => (a.order ?? a.created) - (b.order ?? b.created)); }
+function subjectProgress(id) {
+  const ts = topicsOf(id);
+  const done = ts.filter((t) => t.status === "done" || t.status === "revised").length;
+  return { total: ts.length, done, pct: ts.length ? Math.round((done / ts.length) * 100) : 0 };
+}
+function subjectOptions(selected = "") {
+  const names = [...new Set([...(S.data.subjects || []).map((s) => s.name), "Current affairs", "Legal news", "PG diploma", "Certification", "Research", "Other"])];
+  return names.map((n) => `<option ${n === selected ? "selected" : ""}>${esc(n)}</option>`).join("");
+}
+function renderStudy() {
+  $$('[data-action="study-tab"]').forEach((b) => b.setAttribute("aria-pressed", b.dataset.tab === S.study.tab));
+  const body = $("#studyBody");
+  if (S.study.tab === "week") body.innerHTML = studyWeekHTML();
+  if (S.study.tab === "syllabus") body.innerHTML = syllabusHTML();
+  if (S.study.tab === "deadlines") body.innerHTML = deadlinesHTML(false);
+  if (S.study.addDay) setTimeout(() => $("#dayIn")?.focus(), 0);
+}
+function studyWeekHTML() {
+  const dates = weekDates(S.study.offset), t = todayYmd();
+  const p = weekPlan();
+  const weekTasks = S.data.tasks.filter((x) => dates.includes(x.date));
+  const achieved = weekTasks.reduce((a, x) => a + taskMinutes(x), 0);
+  const target = +p.targetHours || 0;
+  const first = parseYmd(dates[0]), last = parseYmd(dates[6]);
+  $("#studySub").innerHTML = `<button class="iconbtn sm" data-action="study-week" data-step="-1" aria-label="Previous week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button> week of ${first.getDate()} ${MONTHS[first.getMonth()].slice(0, 3)} – ${last.getDate()} ${MONTHS[last.getMonth()].slice(0, 3)} <button class="iconbtn sm" data-action="study-week" data-step="1" aria-label="Next week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  const prios = [0, 1, 2].map((i) => `<div class="lineitem${p.prioDone?.[i] ? " done" : ""}"><span class="n num">${i + 1}.</span><input type="text" data-wp="priority" data-i="${i}" value="${esc(p.priorities?.[i] || "")}" placeholder="${["most important thing this week", "second", "third"][i]}" aria-label="Priority ${i + 1}"><button class="check" data-action="wp-prio" data-i="${i}" aria-pressed="${!!p.prioDone?.[i]}" aria-label="Mark priority ${i + 1} done">${tick}</button></div>`).join("");
+  const goals = (p.goals || []).map((g, i) => `<div class="lineitem${g.done ? " done" : ""}"><button class="check" data-action="wp-goal" data-i="${i}" aria-pressed="${!!g.done}" aria-label="Mark goal done">${tick}</button><span class="t" style="flex:1;${g.done ? "text-decoration:line-through;color:var(--ink-3)" : ""}">${esc(g.text)}</span><button class="del" data-action="wp-goal-del" data-i="${i}" aria-label="Remove goal">✕</button></div>`).join("");
+  const days = dates.map((d, i) => {
+    const ts = S.data.tasks.filter((x) => x.date === d).sort((a, b) => (a.done - b.done) || a.created - b.created);
+    const planned = ts.reduce((a, x) => a + (+x.minutes || 0), 0);
+    const subjects = [...new Set(ts.map((x) => x.subject).filter(Boolean))].slice(0, 2).join(", ");
+    return `<div class="dcol${d === t ? " today" : ""}"><div class="dh"><span class="dn num">${parseYmd(d).getDate()}</span><b>${DOW[i]}</b><span class="num">${planned ? hrs(planned) + "h" : ""}</span></div>
+      ${subjects ? `<div class="sub" style="font-size:11px">${esc(subjects)}</div>` : ""}
+      ${ts.map((x) => `<div class="dtask${x.done ? " done" : ""}"><button class="check" data-action="task-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button><span>${esc(x.title)}</span></div>`).join("")}
+      ${S.study.addDay === d ? `<form class="dayform" data-date="${d}"><label for="dayIn" class="vh">New task</label><input id="dayIn" class="dayin" placeholder="task, then Enter" autocomplete="off"><label for="daySubj" class="vh">Subject</label><select id="daySubj" class="dayin" style="margin-top:4px">${subjectOptions(S.study.lastSubject || "")}</select></form>` : `<button class="addday" data-action="study-addday" data-date="${d}">+ add</button>`}
+    </div>`;
+  }).join("");
+  const due = S.data.assignments.filter((a) => !a.done && (!a.due || a.due <= dates[6])).sort((a, b) => String(a.due || "9").localeCompare(String(b.due || "9")));
+  return `<div class="wk-top">
+      <div class="panel"><h3>Top 3 priorities</h3>${prios}</div>
+      <div class="panel"><h3>Weekly goals</h3>${goals || '<p class="empty" style="margin:2px 0">What do you want to have done by Sunday?</p>'}<div class="lineitem"><span class="n">•</span><input type="text" id="goalIn" placeholder="add a goal, then Enter" aria-label="New weekly goal"></div></div>
+      <div class="panel hrs-panel"><h3>Study hours</h3>
+        <div class="row"><span>Target</span><b><label for="wpTarget" class="vh">Target hours</label><input id="wpTarget" type="number" min="0" max="120" step="1" data-wp="target" value="${esc(target)}"> hrs</b></div>
+        <div class="row"><span>Achieved</span><b class="num">${hrs(achieved)} hrs</b></div>
+        <div class="bar"><i style="width:${target ? Math.min(100, (achieved / 60 / target) * 100) : 0}%;background:var(--sky)"></i></div>
+        <span class="sub">Counts finished study tasks and focus-timer minutes.</span></div>
+    </div>
+    <div class="days7">${days}</div>
+    <div class="wk-bottom">
+      <div class="panel"><h3>Assignments &amp; deadlines</h3>${due.length ? deadlineTable(due) : '<p class="empty">Nothing due this week.</p>'}<button class="link" data-action="study-tab" data-tab="deadlines" style="margin-top:8px">all deadlines →</button></div>
+      <div class="panel"><h3>Weekly review</h3>
+        <label class="lab" for="wpWell">What went well</label><textarea id="wpWell" data-wp="well">${esc(p.well || "")}</textarea>
+        <label class="lab" for="wpImprove">What to improve</label><textarea id="wpImprove" data-wp="improve">${esc(p.improve || "")}</textarea>
+        <label class="lab" for="wpNotes">Notes</label><textarea id="wpNotes" data-wp="notes">${esc(p.notes || "")}</textarea></div>
+    </div>`;
+}
+function deadlineTable(list) {
+  const t = new Date();
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Assignment</th><th>Subject</th><th>Due</th><th>Priority</th><th>Done</th><th></th></tr></thead><tbody>${list.map((a) => {
+    const d = a.due ? daysBetween(t, parseYmd(a.due)) : null;
+    const when = a.due ? `${fmtDay(parseYmd(a.due))}${a.done ? "" : d < 0 ? ` <span style="color:var(--rose)">· ${-d}d late</span>` : d === 0 ? ' <span style="color:var(--rose)">· today</span>' : d <= 3 ? ` <span style="color:var(--rose)">· in ${d}d</span>` : ` <span class="sub">· in ${d}d</span>`}` : '<span class="sub">no date</span>';
+    return `<tr class="${a.done ? "done" : ""}"><td class="t">${esc(a.title)}</td><td>${a.subject ? `<span class="tag" style="background:var(--${subjColor(a.subject) || SUBJECT_COLOR[a.subject] || "ice"})">${esc(a.subject)}</span>` : ""}</td><td class="num">${when}</td>
+      <td><span class="prio3">${["H", "M", "L"].map((p) => `<button data-action="as-prio" data-id="${esc(a.id)}" data-p="${p}" aria-pressed="${(a.priority || "M") === p}" aria-label="Priority ${p}">${p}</button>`).join("")}</span></td>
+      <td><button class="check" data-action="as-toggle" data-id="${esc(a.id)}" aria-pressed="${!!a.done}" aria-label="Mark done">${tick}</button></td>
+      <td><button class="del" data-action="as-delete" data-id="${esc(a.id)}" aria-label="Delete">✕</button></td></tr>`;
+  }).join("")}</tbody></table></div>`;
+}
+function deadlinesHTML() {
+  const list = [...S.data.assignments].sort((a, b) => (a.done - b.done) || String(a.due || "9").localeCompare(String(b.due || "9")));
+  $("#studySub").textContent = `${S.data.assignments.filter((a) => !a.done).length} open`;
+  return `${list.length ? deadlineTable(list) : '<p class="empty">No assignments yet. Add one below; it also shows on your calendar.</p>'}
+    <form class="addrow" id="asForm"><label for="asTitle" class="vh">Assignment</label><input id="asTitle" placeholder="assignment, exam or submission" autocomplete="off" required>
+      <label for="asSubj" class="vh">Subject</label><select id="asSubj">${subjectOptions()}</select>
+      <label for="asDue" class="vh">Due date</label><input id="asDue" type="date">
+      <label for="asPrio" class="vh">Priority</label><select id="asPrio"><option value="H">High</option><option value="M" selected>Medium</option><option value="L">Low</option></select>
+      <button class="btn" type="submit">Add</button></form>`;
+}
+function syllabusHTML() {
+  const subs = S.data.subjects;
+  if (!S.study.subject || !subs.find((s) => s.id === S.study.subject)) S.study.subject = subs[0]?.id || null;
+  const all = S.data.topics, doneAll = all.filter((t) => t.status === "done" || t.status === "revised").length;
+  $("#studySub").textContent = subs.length ? `${subs.length} subject${subs.length > 1 ? "s" : ""} · ${doneAll} of ${all.length} topics done` : "write down your subjects and syllabus";
+  const list = subs.map((s) => {
+    const pr = subjectProgress(s.id);
+    const exam = s.exam ? daysBetween(new Date(), parseYmd(s.exam)) : null;
+    return `<button class="subj" data-action="subj-open" data-id="${esc(s.id)}" aria-pressed="${s.id === S.study.subject}"><div class="top"><span class="dot" style="background:var(--${esc(s.color || "sky")});width:10px;height:10px"></span><b>${esc(s.name)}</b><span class="sub num">${pr.pct}%</span></div><div class="bar" style="margin:0"><i style="width:${pr.pct}%;background:var(--${esc(s.color || "sky")})"></i></div><div class="meta num">${pr.done}/${pr.total} topics${exam !== null && exam >= 0 ? ` · exam in ${exam} day${exam === 1 ? "" : "s"}` : ""}</div></button>`;
+  }).join("");
+  const left = `<div class="subjects">${list}<form class="addrow" id="subjForm" style="margin-top:4px"><label for="subjName" class="vh">New subject</label><input id="subjName" placeholder="new subject, e.g. Paper 1 · Constitutional Law" autocomplete="off" required><button class="btn" type="submit">Add</button></form></div>`;
+  const s = subs.find((x) => x.id === S.study.subject);
+  if (!s) return `<div class="syl">${left}<div class="panel"><h3>Your syllabus lives here</h3><p>Add a subject on the left, then list its units and topics, or paste the whole syllabus at once. Tick topics off as you study and revise them, and send any topic to today’s focus with one tap.</p></div></div>`;
+  const ts = topicsOf(s.id);
+  const units = [...new Set(ts.map((t) => t.unit || ""))];
+  const pr = subjectProgress(s.id);
+  const unitHTML = units.map((u) => {
+    const ut = ts.filter((t) => (t.unit || "") === u);
+    const ud = ut.filter((t) => t.status === "done" || t.status === "revised").length;
+    return `<div class="unit"><h4>${esc(u || "Topics")}<span class="num">${ud}/${ut.length}</span></h4>${ut.map((t) => {
+      const st = STATUSES.find((x) => x[0] === (t.status || "todo")) || STATUSES[0];
+      return `<div class="topic ${st[0]}"><button class="st ${st[0]}" data-action="topic-status" data-id="${esc(t.id)}" title="Tap to change">${st[1]}</button><div class="t" style="flex:1;min-width:0">${esc(t.title)}${t.date ? ` <span class="sub">· ${esc(fmtDay(parseYmd(t.date)))}</span>` : ""}</div>
+        <span class="tools"><button class="mini" data-action="topic-today" data-id="${esc(t.id)}" title="Add to today’s focus">→ today</button><button class="mini" data-action="topic-edit" data-id="${esc(t.id)}" aria-label="Edit">✎</button><button class="del" style="opacity:1" data-action="topic-delete" data-id="${esc(t.id)}" aria-label="Delete">✕</button></span></div>`;
+    }).join("")}</div>`;
+  }).join("");
+  return `<div class="syl">${left}<div class="panel" style="background:var(--card)">
+      <div class="subj-head"><div><h3>${esc(s.name)}</h3><div class="sub num">${pr.done} of ${pr.total} topics done${s.exam ? ` · exam ${esc(fmtDay(parseYmd(s.exam)))}` : ""}${s.notes ? ` · ${esc(s.notes)}` : ""}</div></div>
+        <div class="cal-tools"><button class="mini" data-action="syl-paste" data-id="${esc(s.id)}">Paste syllabus</button><button class="mini" data-action="subj-edit" data-id="${esc(s.id)}">Edit subject</button></div></div>
+      <div class="bar"><i style="width:${pr.pct}%;background:var(--${esc(s.color || "sky")})"></i></div>
+      ${ts.length ? unitHTML : '<p class="empty" style="margin-top:12px">No topics yet. Add them one by one below, or press <b>Paste syllabus</b> and paste the whole list.</p>'}
+      <form class="addrow" id="topicForm" data-subject="${esc(s.id)}"><label for="topicUnit" class="vh">Unit</label><input id="topicUnit" list="unitList" placeholder="unit (optional)" value="${esc(S.study.lastUnit || units[units.length - 1] || "")}" style="flex:0 1 170px"><datalist id="unitList">${units.filter(Boolean).map((u) => `<option value="${esc(u)}">`).join("")}</datalist>
+        <label for="topicTitle" class="vh">Topic</label><input id="topicTitle" placeholder="topic, e.g. Article 21 – right to life" autocomplete="off" required><button class="btn" type="submit">Add topic</button></form>
+    </div></div>`;
+}
+// "Paste syllabus": headings (Unit/Module/Chapter/Part…, or lines ending in ":") start a unit; every other line is a topic.
+function parseSyllabus(text) {
+  let unit = "";
+  const out = [];
+  for (let line of String(text).split(/\r?\n/)) {
+    line = line.replace(/^\s*(?:[-*•●◦▪]|\(?[0-9ivxlc]+[.)]|[a-z][.)])\s+/i, "").trim();
+    if (!line) continue;
+    if (/^(unit|module|chapter|part|paper|section|block|topic\s+\d+)\b/i.test(line) || /:$/.test(line)) { unit = line.replace(/:$/, "").trim(); continue; }
+    line.split(/\s*;\s*/).filter(Boolean).forEach((t) => out.push({ unit, title: t.slice(0, 300) }));
+  }
+  return out;
+}
+function openSubject(s) {
+  sheet(s ? "Edit subject" : "New subject", "", `
+    <div class="field"><label for="sjName">Subject name</label><input id="sjName" value="${esc(s?.name || "")}" placeholder="Paper 1 · Constitutional Law"></div>
+    <div class="grid2"><div class="field"><label for="sjExam">Exam date (optional)</label><input id="sjExam" type="date" value="${esc(s?.exam || "")}"></div>
+    <div class="field"><label for="sjNotes">Short note (optional)</label><input id="sjNotes" value="${esc(s?.notes || "")}" placeholder="textbook, teacher, credits…"></div></div>
+    <div class="field"><span class="lab">Colour</span>${swatches("sjColor", s?.color || "sky")}</div>
+    <div class="actions">${s ? `<button class="btn danger left" data-action="subj-delete" data-id="${esc(s.id)}">Delete subject</button>` : ""}<button class="btn" data-action="subj-save" data-id="${esc(s?.id || "")}">Save</button></div>
+    ${s ? '<p class="sub">Deleting a subject also deletes its topics.</p>' : ""}`);
+}
+function openTopic(t) {
+  sheet("Edit topic", (S.data.subjects.find((s) => s.id === t.subjectId) || {}).name || "", `
+    <div class="field"><label for="tpTitle">Topic</label><input id="tpTitle" value="${esc(t.title)}"></div>
+    <div class="grid2"><div class="field"><label for="tpUnit">Unit</label><input id="tpUnit" value="${esc(t.unit || "")}"></div>
+    <div class="field"><label for="tpDate">Target date</label><input id="tpDate" type="date" value="${esc(t.date || "")}"></div>
+    <div class="field"><label for="tpStatus">Status</label><select id="tpStatus">${STATUSES.map(([k, l]) => `<option value="${k}" ${k === (t.status || "todo") ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
+    <div class="field"><label for="tpNotes">Notes</label><textarea id="tpNotes">${esc(t.notes || "")}</textarea></div>
+    <div class="actions"><button class="btn" data-action="topic-save" data-id="${esc(t.id)}">Save</button></div>`);
+}
+document.addEventListener("input", (e) => {
+  const el = e.target.closest("[data-wp]");
+  if (!el) return;
+  const p = weekPlan();
+  if (el.dataset.wp === "priority") { const pr = [...(p.priorities || ["", "", ""])]; pr[+el.dataset.i] = el.value; saveWeekPlan({ priorities: pr }); }
+  if (el.dataset.wp === "target") saveWeekPlan({ targetHours: +el.value || 0 });
+  if (["well", "improve", "notes"].includes(el.dataset.wp)) saveWeekPlan({ [el.dataset.wp]: el.value });
+});
+document.addEventListener("change", (e) => { if (e.target.id === "wpTarget") renderStudy(); });
+document.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter" && e.target.id === "goalIn") {
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if (!v) return;
+    saveWeekPlan({ goals: [...(weekPlan().goals || []), { text: v, done: false }] }, true);
+    renderStudy(); $("#goalIn")?.focus();
+  }
+});
+document.addEventListener("submit", async (e) => {
+  const f = e.target;
+  if (f.classList.contains("dayform")) {
+    e.preventDefault();
+    const v = $("#dayIn").value.trim(), subject = $("#daySubj").value;
+    S.study.lastSubject = subject;
+    if (v) await add("task", { title: v, subject, minutes: 45, date: f.dataset.date, done: false });
+    S.study.addDay = null; renderStudy(); renderFocus(); renderStrip();
+  }
+  if (f.id === "asForm") {
+    e.preventDefault();
+    await add("assignment", { title: $("#asTitle").value.trim(), subject: $("#asSubj").value, due: $("#asDue").value, priority: $("#asPrio").value, done: false });
+    renderStudy(); renderCalendar(); renderStrip();
+  }
+  if (f.id === "subjForm") {
+    e.preventDefault();
+    const name = $("#subjName").value.trim();
+    if (!name) return;
+    const s = await add("subject", { name, color: COLORS[S.data.subjects.length % COLORS.length], order: S.data.subjects.length });
+    S.study.subject = s.id; renderStudy(); renderProjects();
+  }
+  if (f.id === "topicForm") {
+    e.preventDefault();
+    const title = $("#topicTitle").value.trim(), unit = $("#topicUnit").value.trim();
+    if (!title) return;
+    S.study.lastUnit = unit;
+    await add("topic", { subjectId: f.dataset.subject, unit, title, status: "todo", order: Date.now() });
+    renderStudy(); renderProjects(); $("#topicTitle")?.focus();
+  }
+});
+document.addEventListener("focusout", (e) => {
+  if (e.target.id === "dayIn" && !e.relatedTarget?.closest?.(".dayform")) setTimeout(() => { if (S.study.addDay && !$(".dayform:focus-within")) { S.study.addDay = null; renderStudy(); } }, 150);
+});
+
+/* ============================== stickers ============================== */
+S.stk = { on: false, sel: null };
+function stickerArt(s) {
+  if (s.src?.startsWith("builtin:")) return (STICKERS.find((x) => "builtin:" + x.id === s.src) || STICKERS[0]).svg;
+  const img = S.data.stickerimgs.find((i) => "img:" + i.id === s.src);
+  return img ? `<img src="${img.data}" alt="">` : "";
+}
+function renderStickers() {
+  $$(".stk").forEach((e) => e.remove());
+  for (const s of S.data.stickers) {
+    const host = $(`[data-anchor="${s.anchor}"]`);
+    const art = stickerArt(s);
+    if (!host || !art) continue;
+    const el = document.createElement("div");
+    el.className = "stk" + (S.stk.sel === s.id ? " sel" : "");
+    el.dataset.id = s.id;
+    el.style.left = (s.x * 100).toFixed(2) + "%";
+    el.style.top = (s.y * 100).toFixed(2) + "%";
+    el.style.width = (s.size || 90) + "px";
+    el.style.zIndex = 6 + (s.z || 0);
+    el.style.setProperty("--rot", (s.rot || 0) + "deg");
+    el.innerHTML = art + `<span class="grip" data-grip="1" aria-hidden="true"></span><span class="stk-tools"><button data-stk="rotl" aria-label="Rotate left">↺</button><button data-stk="rotr" aria-label="Rotate right">↻</button><button data-stk="flip" aria-label="Bring to front">⬆</button><button data-stk="del" aria-label="Remove sticker">✕</button></span>`;
+    host.appendChild(el);
+  }
+}
+function renderTray() {
+  const own = S.data.stickerimgs.map((i) => `<button data-action="stk-add" data-src="img:${esc(i.id)}" title="${esc(i.name || "my sticker")}"><img src="${i.data}" alt="${esc(i.name || "my sticker")}"><span class="rm" data-action="stkimg-del" data-id="${esc(i.id)}" role="button" aria-label="Delete this upload">✕</span></button>`).join("");
+  $("#trayItems").innerHTML = own + STICKERS.map((s) => `<button data-action="stk-add" data-src="builtin:${s.id}" title="${esc(s.name)}" aria-label="Add ${esc(s.name)}">${s.svg}</button>`).join("");
+}
+function toggleDecorate() {
+  S.stk.on = !S.stk.on;
+  document.body.classList.toggle("decorating", S.stk.on);
+  $("#tray").hidden = !S.stk.on;
+  if (!S.stk.on) S.stk.sel = null;
+  if (S.stk.on) { renderTray(); toast("Decorate mode: drag stickers anywhere"); }
+  renderStickers();
+}
+function visibleAnchor() {
+  const mid = innerHeight * 0.42;
+  const all = $$("[data-anchor]");
+  return all.find((a) => { const r = a.getBoundingClientRect(); return r.top <= mid && r.bottom >= mid && r.width > 0; }) || all[0];
+}
+async function addSticker(src) {
+  const host = visibleAnchor();
+  const r = host.getBoundingClientRect();
+  const cx = Math.min(Math.max((innerWidth / 2 - r.left) / r.width, 0.1), 0.9);
+  const cy = Math.min(Math.max((innerHeight * 0.42 - r.top) / r.height, 0.1), 0.9);
+  const s = await add("sticker", { src, anchor: host.dataset.anchor, x: +cx.toFixed(4), y: +cy.toFixed(4), size: 96, rot: 0, z: S.data.stickers.length });
+  S.stk.sel = s.id;
+  renderStickers();
+}
+const stkDoc = (id) => S.data.stickers.find((s) => s.id === id);
+let drag = null;
+document.addEventListener("pointerdown", (e) => {
+  if (!S.stk.on) return;
+  const el = e.target.closest(".stk");
+  if (!el) { if (!e.target.closest("#tray") && S.stk.sel) { S.stk.sel = null; renderStickers(); } return; }
+  if (e.target.closest("[data-stk]")) return;
+  e.preventDefault();
+  S.stk.sel = el.dataset.id;
+  $$(".stk").forEach((x) => x.classList.toggle("sel", x === el));
+  const s = stkDoc(el.dataset.id);
+  drag = { el, s, mode: e.target.dataset.grip ? "size" : "move", x0: e.clientX, y0: e.clientY, size0: s.size || 90 };
+  el.setPointerCapture(e.pointerId);
+});
+document.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const { el, s } = drag;
+  if (drag.mode === "size") {
+    const d = Math.max(e.clientX - drag.x0, e.clientY - drag.y0);
+    s.size = Math.round(Math.min(360, Math.max(32, drag.size0 + d * 1.4)));
+    el.style.width = s.size + "px";
+  } else {
+    const r = el.parentElement.getBoundingClientRect();
+    s.x = (e.clientX - r.left) / r.width;
+    s.y = (e.clientY - r.top) / r.height;
+    el.style.left = s.x * 100 + "%";
+    el.style.top = s.y * 100 + "%";
+  }
+});
+document.addEventListener("pointerup", async (e) => {
+  if (!drag) return;
+  const { el, s, mode } = drag;
+  drag = null;
+  if (mode === "move") {
+    el.style.visibility = "hidden";
+    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-anchor]");
+    el.style.visibility = "";
+    if (under && under.dataset.anchor !== s.anchor) {
+      const r = under.getBoundingClientRect();
+      s.anchor = under.dataset.anchor;
+      s.x = (e.clientX - r.left) / r.width;
+      s.y = (e.clientY - r.top) / r.height;
+    }
+    s.x = +Math.min(1.05, Math.max(-0.05, s.x)).toFixed(4);
+    s.y = +Math.min(1.05, Math.max(-0.05, s.y)).toFixed(4);
+  }
+  renderStickers();
+  await patch(s, { anchor: s.anchor, x: s.x, y: s.y, size: s.size });
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-stk]");
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const s = stkDoc(b.closest(".stk").dataset.id);
+  if (b.dataset.stk === "del") { S.stk.sel = null; await drop("sticker", s.id); return renderStickers(); }
+  if (b.dataset.stk === "rotl") s.rot = ((s.rot || 0) - 12);
+  if (b.dataset.stk === "rotr") s.rot = ((s.rot || 0) + 12);
+  if (b.dataset.stk === "flip") s.z = Math.max(0, ...S.data.stickers.map((x) => x.z || 0)) + 1;
+  renderStickers();
+  await patch(s, { rot: s.rot || 0, z: s.z || 0 });
+}, true);
+// Upload your own sticker: shrink it, optionally turn a white background transparent, store it.
+$("#stickerFile").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("That file isn’t an image I can read")); i.src = URL.createObjectURL(file); });
+    let max = 420, data;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const g = c.getContext("2d");
+      g.drawImage(img, 0, 0, c.width, c.height);
+      if ($("#stickerNoWhite").checked) {
+        const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+        for (let i = 0; i < px.length; i += 4) {
+          const m = Math.min(px[i], px[i + 1], px[i + 2]);
+          if (m > 238) px[i + 3] = 0; else if (m > 205) px[i + 3] = Math.round(px[i + 3] * (238 - m) / 33);
+        }
+        g.putImageData(d, 0, 0);
+      }
+      data = c.toDataURL("image/png");
+      if (data.length < 700000) break;
+      max = Math.round(max * 0.7);
+    }
+    const doc = await add("stickerimg", { name: file.name.replace(/\.[^.]+$/, "").slice(0, 60), data });
+    renderTray();
+    await addSticker("img:" + doc.id);
+  } catch (err) { toast(err.message); }
+});
+
+Object.assign(ACTIONS, {
+  "study-tab": (b) => { S.study.tab = b.dataset.tab; renderStudy(); if (b.closest("#studyBody")) $("#studyCard").scrollIntoView({ behavior: "smooth" }); },
+  "study-week": (b) => { S.study.offset += +b.dataset.step; S.study.addDay = null; renderStudy(); },
+  "study-addday": (b) => { S.study.addDay = b.dataset.date; renderStudy(); },
+  "wp-prio": (b) => { const p = weekPlan(); const d = [...(p.prioDone || [false, false, false])]; d[+b.dataset.i] = !d[+b.dataset.i]; saveWeekPlan({ prioDone: d }, true); renderStudy(); },
+  "wp-goal": (b) => { const g = (weekPlan().goals || []).map((x, i) => (i === +b.dataset.i ? { ...x, done: !x.done } : x)); saveWeekPlan({ goals: g }, true); renderStudy(); },
+  "wp-goal-del": (b) => { saveWeekPlan({ goals: (weekPlan().goals || []).filter((_, i) => i !== +b.dataset.i) }, true); renderStudy(); },
+  "as-toggle": async (b) => { const a = find("assignments", b.dataset.id); await patch(a, { done: !a.done }); renderStudy(); renderCalendar(); renderStrip(); },
+  "as-prio": async (b) => { await patch(find("assignments", b.dataset.id), { priority: b.dataset.p }); renderStudy(); },
+  "as-delete": async (b) => { await drop("assignment", b.dataset.id); renderStudy(); renderCalendar(); renderStrip(); },
+  "subj-open": (b) => { S.study.subject = b.dataset.id; renderStudy(); },
+  "subj-edit": (b) => openSubject(find("subjects", b.dataset.id)),
+  "subj-save": async (b) => {
+    const data = { name: $("#sjName").value.trim() || "Subject", exam: $("#sjExam").value, notes: $("#sjNotes").value.trim(), color: swatchValue("sjColor") };
+    if (b.dataset.id) {
+      const s = find("subjects", b.dataset.id), old = s.name;
+      await patch(s, data);
+      if (old !== data.name) for (const t of S.data.tasks.filter((x) => x.subject === old)) await patch(t, { subject: data.name });
+    } else { const s = await add("subject", { ...data, order: S.data.subjects.length }); S.study.subject = s.id; }
+    closeSheet(); renderStudy(); renderProjects(); renderFocus();
+  },
+  "subj-delete": async (b) => {
+    const id = b.dataset.id;
+    for (const t of topicsOf(id)) await drop("topic", t.id);
+    await drop("subject", id);
+    S.study.subject = null; closeSheet(); renderStudy(); renderProjects();
+  },
+  "topic-status": async (b) => {
+    const t = find("topics", b.dataset.id);
+    const i = STATUSES.findIndex((x) => x[0] === (t.status || "todo"));
+    await patch(t, { status: STATUSES[(i + 1) % STATUSES.length][0] });
+    renderStudy(); renderProjects();
+  },
+  "topic-today": async (b) => {
+    const t = find("topics", b.dataset.id), s = find("subjects", t.subjectId);
+    await add("task", { title: t.title, subject: s?.name || "PG diploma", minutes: 45, date: todayYmd(), done: false, topicId: t.id });
+    if ((t.status || "todo") === "todo") await patch(t, { status: "reading" });
+    renderStudy(); renderFocus(); renderStrip(); toast("Added to today’s focus");
+  },
+  "topic-edit": (b) => openTopic(find("topics", b.dataset.id)),
+  "topic-save": async (b) => {
+    await patch(find("topics", b.dataset.id), { title: $("#tpTitle").value.trim(), unit: $("#tpUnit").value.trim(), date: $("#tpDate").value, status: $("#tpStatus").value, notes: $("#tpNotes").value });
+    closeSheet(); renderStudy(); renderProjects();
+  },
+  "topic-delete": async (b) => { await drop("topic", b.dataset.id); renderStudy(); renderProjects(); },
+  "syl-paste": (b) => {
+    const s = find("subjects", b.dataset.id);
+    sheet("Paste your syllabus", s.name, `
+      <p class="sub">Paste the syllabus as text, one topic per line. Lines that start with Unit, Module, Chapter or Part, or that end with a colon, become unit headings. Bullets and numbering are removed for you.</p>
+      <div class="field"><label for="sylText">Syllabus</label><textarea id="sylText" style="min-height:220px" placeholder="Unit 1: Fundamental Rights&#10;Article 14 – equality before law&#10;Article 19 – freedoms&#10;Article 21 – right to life&#10;Unit 2: Directive Principles&#10;…"></textarea></div>
+      <p class="sub" id="sylPreview"></p>
+      <div class="actions"><button class="btn" data-action="syl-import" data-id="${esc(s.id)}">Add topics</button></div>`);
+    $("#sylText").addEventListener("input", () => { const r = parseSyllabus($("#sylText").value); $("#sylPreview").textContent = r.length ? `${r.length} topic${r.length > 1 ? "s" : ""} in ${new Set(r.map((x) => x.unit)).size} unit${new Set(r.map((x) => x.unit)).size > 1 ? "s" : ""}` : ""; });
+    $("#sylText").focus();
+  },
+  "syl-import": async (b) => {
+    const rows = parseSyllabus($("#sylText").value);
+    if (!rows.length) return toast("Paste at least one topic");
+    b.disabled = true; b.textContent = "Adding…";
+    let n = Date.now();
+    for (let i = 0; i < rows.length; i += 6) await Promise.all(rows.slice(i, i + 6).map((r, k) => add("topic", { subjectId: b.dataset.id, unit: r.unit, title: r.title, status: "todo", order: n + i + k })));
+    closeSheet(); renderStudy(); renderProjects(); toast(`Added ${rows.length} topics`);
+  },
+  "decorate": () => toggleDecorate(),
+  "stk-add": (b, e) => { if (e.target.closest(".rm")) return; addSticker(b.dataset.src); },
+  "stkimg-del": async (b, e) => {
+    e.stopPropagation();
+    const id = b.dataset.id;
+    for (const s of S.data.stickers.filter((x) => x.src === "img:" + id)) await drop("sticker", s.id);
+    await drop("stickerimg", id);
+    renderTray(); renderStickers();
+  },
+});
+// Finishing a study task that came from the syllabus marks that topic done.
+const _taskToggle = ACTIONS["task-toggle"];
+ACTIONS["task-toggle"] = async (b) => {
+  await _taskToggle(b);
+  const t = find("tasks", b.dataset.id);
+  if (t?.done && t.topicId) { const tp = find("topics", t.topicId); if (tp && tp.status !== "revised") await patch(tp, { status: "done" }); }
+  if (S.study.tab) renderStudy();
+  renderProjects();
+};
 
 /* ============================== start ============================== */
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
