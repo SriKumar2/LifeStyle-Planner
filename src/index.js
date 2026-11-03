@@ -32,7 +32,7 @@ async function route(request, env, url) {
   const db = store(env);
 
   if (!env.APP_PASSCODE || String(env.APP_PASSCODE).length < 4) {
-    return json({ error: "APP_PASSCODE is not set. Add it in Cloudflare: Workers & Pages → cloud-nine → Settings → Variables and Secrets." }, 503);
+    return json({ error: "APP_PASSCODE is not set. Add it in Cloudflare: Workers & Pages → your Worker → Settings → Variables and Secrets." }, 503);
   }
 
   // ---------- public routes ----------

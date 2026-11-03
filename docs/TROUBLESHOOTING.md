@@ -9,7 +9,7 @@ Check capital letters and spaces. On iPhone, auto-capitalisation sometimes chang
 After 8 wrong tries, sign-in pauses for 15 minutes. Wait, then try again.
 
 **“APP_PASSCODE is not set.”**
-The passcode secret is missing in Cloudflare. Add it: Cloudflare dashboard → **Workers & Pages** → **cloud-nine** → **Settings** → **Variables and Secrets** → **Add** → type **Secret**, name `APP_PASSCODE`, value = the passcode → **Deploy**.
+The passcode secret is missing in Cloudflare. Add it: Cloudflare dashboard → **Workers & Pages** → your Worker (for example **cloud-nine** or **lifestyle-planner**) → **Settings** → **Variables and Secrets** → **Add** → type **Secret**, name `APP_PASSCODE`, value = the passcode → **Deploy**.
 
 **The iPhone app keeps asking for the passcode.**
 The home-screen app keeps its own sign-in. Type the passcode inside the app (not in Safari). If it still forgets, check **Settings → Safari → Advanced → Block All Cookies** is off, and that you didn’t add it from a Private Browsing tab.

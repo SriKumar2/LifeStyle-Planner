@@ -72,7 +72,7 @@ Type the passcode when it asks. The last line of `wrangler deploy` shows your li
 
 ## Changing the passcode
 
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **cloud-nine**.
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → your Worker (for example **cloud-nine** or **lifestyle-planner**).
 2. Open **Settings** → **Variables and Secrets**.
 3. Next to **APP_PASSCODE**, choose **Edit**, type the new passcode and **Deploy**.
 
