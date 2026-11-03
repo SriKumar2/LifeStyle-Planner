@@ -1,0 +1,31 @@
+{
+  "name": "cloud-nine-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud Nine: a soft, pastel life planner for study, habits, calendars, news and an AI helper. Runs in any browser, installs on Windows and iPhone.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/index.js && node --check src/store.js && node --check src/ai.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "ical.js": "2.2.1"
+  },
+  "devDependencies": {
+    "wrangler": "4.140.0"
+  },
+  "cloudflare": {
+    "label": "Cloud Nine planner",
+    "products": ["Workers", "Durable Objects"],
+    "categories": ["storage"],
+    "bindings": {
+      "APP_PASSCODE": {
+        "description": "The passcode you will type to open Cloud Nine. Pick something only you know, at least 8 characters."
+      },
+      "GEMINI_API_KEY": {
+        "description": "Optional. A free Gemini API key from https://aistudio.google.com/apikey for the AI helper. You can also paste it later inside the app's Settings. Leave as 'none' to skip."
+      }
+    }
+  }
+}

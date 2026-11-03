@@ -1,0 +1,2 @@
+APP_PASSCODE=choose-a-passcode # the passcode you type to open the app
+GEMINI_API_KEY=none # optional: free key from https://aistudio.google.com/apikey (or add it later in Settings)

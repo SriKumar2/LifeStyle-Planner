@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cloud-nine",
+  "main": "src/index.js",
+  "compatibility_date": "2025-08-01",
+
+  // The website itself (HTML, CSS, JS, icons). Anything under /api/ goes to the Worker first.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // All of your planner data lives in one private SQLite database (a Durable Object).
+  "durable_objects": {
+    "bindings": [{ "name": "STORE", "class_name": "PlannerStore" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PlannerStore"] }],
+
+  "observability": { "enabled": true }
+}
