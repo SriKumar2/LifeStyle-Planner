@@ -38,25 +38,26 @@
 </section>
 
 <div class="app" id="app" hidden>
-  <nav class="rail" aria-label="Sections">
+  <nav class="rail" aria-label="Pages">
     <div class="logo"><img src="/icons/icon-192.png" alt="Cloud Nine" width="36" height="36"></div>
-    <button data-action="scroll" data-to="top" aria-label="Home" title="Home" class="on"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></button>
-    <button data-action="scroll" data-to="calCard" aria-label="Calendar" title="Calendar"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
-    <button data-action="scroll" data-to="focusCard" aria-label="Study" title="Today’s study"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg></button>
-    <button data-action="scroll" data-to="studyCard" aria-label="Study planner" title="Study planner &amp; syllabus"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6h10M4 12h10M4 18h7M17 5l2 2 3-3M17 11l2 2 3-3"/></svg></button>
-    <button data-action="scroll" data-to="brainSec" aria-label="Projects" title="Second brain"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg></button>
+    <a class="navbtn" href="#home" data-view="home" title="Home"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+    <a class="navbtn" href="#calendar" data-view="calendar" title="Calendar"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Calendar</span></a>
+    <a class="navbtn" href="#study" data-view="study" title="Study planner &amp; syllabus"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg><span>Study</span></a>
+    <a class="navbtn" href="#habits" data-view="habits" title="Daily rituals"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M14 16.5l2 2 4-4"/></svg><span>Habits</span></a>
+    <a class="navbtn" href="#news" data-view="news" title="News desk"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h11v14H7a2 2 0 0 1-2-2zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg><span>News</span></a>
+    <a class="navbtn" href="#projects" data-view="projects" title="Second brain"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg><span>Projects</span></a>
     <div class="spacer"></div>
-    <button data-action="decorate" aria-label="Decorate with stickers" title="Decorate with stickers"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.2 5.6L20 9.3l-4.5 3.8 1.4 5.9L12 15.9 7.1 19l1.4-5.9L4 9.3l5.8-.7z"/></svg></button>
-    <button data-action="ai-open" aria-label="Ask Cloudy" title="Ask Cloudy (Ctrl+K)"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8zM18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
-    <button data-action="settings" aria-label="Settings" title="Settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4.4l-.4 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4.4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></button>
+    <button class="navbtn" data-action="decorate" title="Decorate with stickers"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.2 5.6L20 9.3l-4.5 3.8 1.4 5.9L12 15.9 7.1 19l1.4-5.9L4 9.3l5.8-.7z"/></svg><span>Stickers</span></button>
+    <button class="navbtn" data-action="ai-open" title="Ask Cloudy (Ctrl+K)"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8zM18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Cloudy</span></button>
+    <button class="navbtn" data-action="settings" title="Settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4.4l-.4 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4.4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span>Settings</span></button>
   </nav>
 
   <main id="top">
-    <div class="sticker" aria-hidden="true">
+    <div class="sticker" aria-hidden="true" data-views="home">
       <svg width="150" height="150" viewBox="-50 -50 100 100"><g fill="var(--asterisk)"><rect x="-7" y="-46" width="14" height="92" rx="7"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(45)"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(90)"/><rect x="-7" y="-46" width="14" height="92" rx="7" transform="rotate(135)"/></g></svg>
     </div>
 
-    <header class="head" data-anchor="head">
+    <header class="head" data-anchor="head" data-views="home">
       <div class="hello">
         <div class="date num" id="today"></div>
         <h1 id="greeting"></h1>
@@ -68,25 +69,20 @@
       </div>
     </header>
 
-    <div class="strip" id="strip" data-anchor="strip"></div>
+    <header class="page-head" data-anchor="page" data-views="calendar study habits news projects">
+      <h1 id="pageTitle"></h1>
+      <button class="ask" data-action="ai-open"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg><span>Ask Cloudy…</span><kbd>Ctrl K</kbd></button>
+    </header>
 
-    <section class="board">
-      <article class="card cal" id="calCard" data-anchor="cal" aria-labelledby="calT">
-        <div class="card-head">
-          <div><h2 id="calT">this <em id="calWord">week</em></h2><div class="sub num" id="calSub"></div></div>
-          <div class="cal-tools">
-            <button class="iconbtn sm" data-action="cal-prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
-            <button class="mini" data-action="cal-today">Today</button>
-            <button class="iconbtn sm" data-action="cal-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
-            <div class="seg" role="group" aria-label="Calendar range"><button aria-pressed="true" data-action="cal-range" data-range="week">Week</button><button aria-pressed="false" data-action="cal-range" data-range="month">Month</button></div>
-            <button class="btn sm" data-action="event-new">+ Event</button>
-          </div>
-        </div>
-        <div class="legend" id="legend"></div>
-        <div class="cal-scroll" id="calBody"></div>
+    <div class="strip" id="strip" data-anchor="strip" data-views="home"></div>
+
+    <section class="board" id="board" data-view="home">
+      <article class="card todo" data-anchor="todo" data-views="home" aria-labelledby="todoT">
+        <div class="card-head"><h2 id="todoT">this week’s <em>to-do</em></h2><span class="sub num" id="todoSub"></span></div>
+        <div class="wk8" id="wk8"></div>
       </article>
 
-      <article class="card focus" id="focusCard" data-anchor="focus" aria-labelledby="focT">
+      <article class="card focus" id="focusCard" data-anchor="focus" data-views="home study" aria-labelledby="focT">
         <div class="card-head"><h2 id="focT">today’s <em>focus</em></h2><button class="link" data-action="plan-open">✨ plan my week</button></div>
         <div class="focus-top" id="focusTop"></div>
         <div id="focusList"></div>
@@ -94,14 +90,14 @@
           <label for="taskTitle" class="vh">New study task</label>
           <input id="taskTitle" placeholder="add a study task for today…" autocomplete="off">
           <label for="taskSubject" class="vh">Subject</label>
-          <select id="taskSubject"><option>Current affairs</option><option>Legal news</option><option>PG diploma</option><option>Certification</option><option>Research</option><option>Other</option></select>
+          <select id="taskSubject"></select>
           <label for="taskMinutes" class="vh">Minutes</label>
           <input id="taskMinutes" type="number" min="5" max="600" step="5" value="30" class="mins" title="minutes">
           <button class="btn" type="submit">Add</button>
         </form>
       </article>
 
-      <article class="card remind" data-anchor="remind" aria-labelledby="remT">
+      <article class="card remind" data-anchor="remind" data-views="home" aria-labelledby="remT">
         <div class="card-head"><h2 id="remT">reminders</h2><span class="sub" id="remSub"></span></div>
         <div id="remList"></div>
         <form class="add" id="remForm">
@@ -113,34 +109,22 @@
         </form>
       </article>
 
-      <article class="card todo" data-anchor="todo" aria-labelledby="todoT">
-        <div class="card-head"><h2 id="todoT">weekly <em>to-do</em></h2><span class="sub num" id="todoSub"></span></div>
-        <div class="days" id="days" role="group" aria-label="Pick a day"></div>
-        <div id="todoList"></div>
-        <form class="add" id="todoForm"><label for="todoTitle" class="vh">New task</label><input id="todoTitle" placeholder="add something for this day…" autocomplete="off"><button class="btn" type="submit">Add</button></form>
-      </article>
-
-      <article class="card news" data-anchor="news" aria-labelledby="newsT">
+      <article class="card cal" id="calCard" data-anchor="cal" data-views="home calendar" aria-labelledby="calT">
         <div class="card-head">
-          <h2 id="newsT">news <em>desk</em></h2>
-          <div class="seg" role="group" aria-label="News type">
-            <button aria-pressed="true" data-action="news-tab" data-tab="ca">Current affairs</button>
-            <button aria-pressed="false" data-action="news-tab" data-tab="legal">Legal</button>
-            <button aria-pressed="false" data-action="news-tab" data-tab="saved">Saved</button>
+          <div><h2 id="calT">this <em id="calWord">month</em></h2><div class="sub num" id="calSub"></div></div>
+          <div class="cal-tools">
+            <button class="iconbtn sm" data-action="cal-prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button class="mini" data-action="cal-today">Today</button>
+            <button class="iconbtn sm" data-action="cal-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <div class="seg" role="group" aria-label="Calendar range"><button aria-pressed="true" data-action="cal-range" data-range="month">Month</button><button aria-pressed="false" data-action="cal-range" data-range="week">Week</button></div>
+            <button class="btn sm" data-action="event-new">+ Event</button>
           </div>
         </div>
-        <div id="newsList"></div>
-        <div class="news-foot"><span class="sub" id="newsStatus"></span><button class="mini" data-action="news-refresh">Refresh</button></div>
+        <div class="legend" id="legend"></div>
+        <div class="cal-scroll" id="calBody"></div>
       </article>
 
-      <article class="card habit" data-anchor="habit" aria-labelledby="habT">
-        <div class="card-head"><h2 id="habT">daily <em>rituals</em></h2><button class="link" data-action="settings" data-tab="habits">edit habits</button></div>
-        <div class="hgrid" id="hgrid"></div>
-        <div class="mood" id="mood" role="group" aria-label="Today’s mood"></div>
-        <p class="motto">remember, <em>consistency</em> over perfection.</p>
-      </article>
-
-      <article class="card study" id="studyCard" data-anchor="study" aria-labelledby="studyT">
+      <article class="card study" id="studyCard" data-anchor="study" data-views="study" aria-labelledby="studyT">
         <div class="card-head">
           <div><h2 id="studyT">study <em>planner</em></h2><div class="sub num" id="studySub"></div></div>
           <div class="cal-tools">
@@ -154,7 +138,27 @@
         <div id="studyBody"></div>
       </article>
 
-      <section class="brain" id="brainSec" data-anchor="brain" aria-labelledby="brainT">
+      <article class="card news" data-anchor="news" data-views="news" aria-labelledby="newsT">
+        <div class="card-head">
+          <h2 id="newsT">news <em>desk</em></h2>
+          <div class="seg" role="group" aria-label="News type">
+            <button aria-pressed="true" data-action="news-tab" data-tab="ca">Current affairs</button>
+            <button aria-pressed="false" data-action="news-tab" data-tab="legal">Legal</button>
+            <button aria-pressed="false" data-action="news-tab" data-tab="saved">Saved</button>
+          </div>
+        </div>
+        <div id="newsList"></div>
+        <div class="news-foot"><span class="sub" id="newsStatus"></span><button class="mini" data-action="news-refresh">Refresh</button></div>
+      </article>
+
+      <article class="card habit" data-anchor="habit" data-views="habits" aria-labelledby="habT">
+        <div class="card-head"><h2 id="habT">daily <em>rituals</em></h2><button class="link" data-action="settings" data-tab="habits">edit habits</button></div>
+        <div class="hgrid" id="hgrid"></div>
+        <div class="mood" id="mood" role="group" aria-label="Today’s mood"></div>
+        <p class="motto">remember, <em>consistency</em> over perfection.</p>
+      </article>
+
+      <section class="brain" id="brainSec" data-anchor="brain" data-views="projects" aria-labelledby="brainT">
         <div class="brain-head"><h2 id="brainT">second <em>brain</em></h2><button class="link" data-action="project-new">+ new project</button></div>
         <div class="projects" id="projects"></div>
       </section>
@@ -162,12 +166,12 @@
     <p class="foot">Cloud Nine · your data stays in your own Cloudflare account · <button class="link" data-action="logout">sign out</button></p>
   </main>
 
-  <nav class="tabbar" aria-label="Sections">
-    <button data-action="scroll" data-to="top"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Home</button>
-    <button data-action="scroll" data-to="calCard"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Calendar</button>
-    <button data-action="scroll" data-to="studyCard"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>Study</button>
-    <button data-action="ai-open"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>Cloudy</button>
-    <button data-action="settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</button>
+  <nav class="tabbar" aria-label="Pages">
+    <a href="#home" data-view="home"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="#study" data-view="study"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>Study</a>
+    <a href="#habits" data-view="habits"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M14 16.5l2 2 4-4"/></svg>Habits</a>
+    <a href="#news" data-view="news"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h11v14H7a2 2 0 0 1-2-2zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg>News</a>
+    <button data-action="more"><svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>More</button>
   </nav>
 
   <!-- Cloudy -->

@@ -128,7 +128,7 @@ async function route(request, env, url) {
     const list = feedMatch[1] === "calendar" ? settings.calendars : settings.newsFeeds;
     const src = (list || []).find((s) => s.id === decodeURIComponent(feedMatch[2]));
     if (!src) return json({ error: "Unknown feed" }, 404);
-    return relay(src.url, feedMatch[1] === "calendar" ? 300 : 900);
+    return feedMatch[1] === "calendar" ? relayCalendar(src.url) : relay(src.url, 900);
   }
   const articleMatch = p.match(/^\/api\/article\/(.+)$/);
   if (articleMatch && m === "GET") {
@@ -257,6 +257,34 @@ async function relay(target, maxAge) {
   });
 }
 
+// Calendars: iCloud public links are fussy. Depending on the calendar, Apple serves them from
+// pXX-caldav.icloud.com or pXX-calendars.icloud.com, so try both and check we really got a calendar.
+async function relayCalendar(url) {
+  const tries = [url];
+  if (/-caldav\.icloud\.com/i.test(url)) tries.push(url.replace(/-caldav\.icloud\.com/i, "-calendars.icloud.com"));
+  else if (/-calendars\.icloud\.com/i.test(url)) tries.push(url.replace(/-calendars\.icloud\.com/i, "-caldav.icloud.com"));
+  const seen = [];
+  for (const target of tries) {
+    try {
+      const res = await fetch(target, { headers: { "User-Agent": "Mozilla/5.0 (compatible; CloudNinePlanner/1.0)", Accept: "text/calendar, */*" }, redirect: "follow" });
+      const text = res.ok ? await res.text() : "";
+      if (res.ok && text.includes("BEGIN:VCALENDAR")) {
+        return new Response(text, { headers: { "Content-Type": "text/calendar; charset=utf-8", "Cache-Control": "private, max-age=300" } });
+      }
+      seen.push(res.ok ? "not a calendar file" : String(res.status));
+    } catch (e) {
+      seen.push(/redirect/i.test(String(e && e.message)) ? "redirect loop" : "unreachable");
+    }
+  }
+  const icloud = /icloud\.com/i.test(url);
+  let msg;
+  if (icloud && seen.some((x) => x === "redirect loop" || x === "404" || x === "403"))
+    msg = "Apple refused this link. On the iPhone: Calendar → Calendars → ⓘ next to the calendar → turn Public Calendar OFF, wait a minute, turn it ON again, then Share Link → Copy and add the new link.";
+  else if (icloud) msg = `Apple didn’t send the calendar (${seen.join(", ")}). Make sure Public Calendar is on for it, then copy the link again.`;
+  else if (seen.includes("404") || seen.includes("403")) msg = "That link was refused. For Google, use “Secret address in iCal format” (Settings → your calendar → Integrate calendar).";
+  else msg = `Couldn’t load this calendar (${seen.join(", ")}). Check the link opens in a browser.`;
+  return json({ error: msg }, 502);
+}
 // Sessions: "<issuedAt>.<hmac>" signed with the passcode, so changing the passcode signs everyone out.
 async function hmac(secret, msg) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);

@@ -119,7 +119,7 @@ async function saveSettings(p) {
 const S = {
   data: null,
   syncedAt: 0,
-  cal: { range: "week", offset: 0, sources: new Map(), errors: {} },
+  cal: { range: "month", offset: 0, sources: new Map(), errors: {} },
   todo: { offset: 0, day: todayYmd() },
   newsTab: "ca",
   newsMore: false,
@@ -469,7 +469,7 @@ function openEvent(e) {
   const when = e.allDay
     ? (daysBetween(e.start, e.end) > 1 ? `${fmtDay(e.start)} – ${fmtDay(addDays(e.end, -1))}` : `${fmtDay(e.start)} · all day`)
     : `${fmtDay(e.start)} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
-  if (e.deadline) { closeSheet(); S.study.tab = "deadlines"; renderStudy(); return $("#studyCard").scrollIntoView({ behavior: "smooth" }); }
+  if (e.deadline) { closeSheet(); S.study.tab = "deadlines"; renderStudy(); return go("study"); }
   if (!e.external) return openEventEditor(S.data.events.find((x) => x.id === e.id));
   sheet(e.title, e.source, `
     <div class="box"><p><b>${esc(when)}</b></p>${e.location ? `<p>📍 ${esc(e.location)}</p>` : ""}${e.description ? `<p style="white-space:pre-wrap">${esc(e.description.slice(0, 1500))}</p>` : ""}</div>
@@ -511,6 +511,8 @@ function focusTasks() {
   return [...today, ...carried].sort((a, b) => (a.done - b.done) || String(a.date).localeCompare(String(b.date)));
 }
 function renderFocus() {
+  const sel = $("#taskSubject");
+  if (sel && !sel.matches(":focus")) { const cur = sel.value; sel.innerHTML = subjectOptions(cur || S.study?.lastSubject || ""); }
   const list = focusTasks();
   const T = S.timer;
   const R = 157;
@@ -608,41 +610,54 @@ $("#remForm").addEventListener("submit", async (e) => {
   renderReminders(); renderStrip();
 });
 
-/* ============================== weekly to-do ============================== */
+/* ============================== this week's to-do ============================== */
+// A paper-style weekly plan: a "weekly list" box for anything without a day, then one box per day.
 function renderTodo() {
-  const dates = weekDates(S.todo.offset);
-  if (!dates.includes(S.todo.day)) S.todo.day = S.todo.offset === 0 ? todayYmd() : dates[0];
-  const t = todayYmd();
-  $("#days").innerHTML = `${dates.map((d, i) => `<button aria-pressed="${d === S.todo.day}" class="${S.data.todos.some((x) => x.date === d) ? "has" : ""}${d === t ? " today" : ""}" data-action="todo-day" data-date="${d}">${DOW[i][0]}<b class="num">${parseYmd(d).getDate()}</b><i></i></button>`).join("")}`;
-  const list = S.data.todos.filter((x) => x.date === S.todo.day).sort((a, b) => (a.done - b.done) || a.created - b.created);
-  $("#todoList").innerHTML = list.length
-    ? list.map((x) => { const p = PRIO.find((q) => q.k === x.priority) || PRIO[0];
-      return `<div class="task${x.done ? " done" : ""}"><button class="check" data-action="todo-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button><div class="t"><span>${esc(x.title)}</span></div>
-        <button class="prio" data-action="todo-prio" data-id="${esc(x.id)}" style="background:${p.c}" title="priority: ${p.l} (tap to change)" aria-label="Priority ${p.l}"></button>
-        <button class="del" data-action="todo-delete" data-id="${esc(x.id)}" aria-label="Delete">✕</button></div>`; }).join("")
-    : '<p class="empty">Nothing planned. A free day is allowed too.</p>';
-  const week = S.data.todos.filter((x) => dates.includes(x.date));
-  $("#todoSub").innerHTML = `<button class="iconbtn sm" data-action="todo-week" data-step="-1" aria-label="Previous week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button> ${week.filter((x) => x.done).length} of ${week.length} done ${S.todo.offset === 0 ? "this week" : ""} <button class="iconbtn sm" data-action="todo-week" data-step="1" aria-label="Next week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  const dates = weekDates(S.todo.offset), t = todayYmd();
+  const listKey = `list:${dates[0]}`;
+  const row = (x) => { const p = PRIO.find((q) => q.k === x.priority) || PRIO[0];
+    return `<div class="task${x.done ? " done" : ""}"><button class="check" data-action="todo-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button><div class="t"><span>${esc(x.title)}</span></div>
+      <button class="prio" data-action="todo-prio" data-id="${esc(x.id)}" style="background:${p.c}" title="priority: ${p.l} (tap to change)" aria-label="Priority ${p.l}"></button>
+      <button class="del" data-action="todo-delete" data-id="${esc(x.id)}" aria-label="Delete">✕</button></div>`; };
+  const items = (key) => S.data.todos.filter((x) => x.date === key).sort((a, b) => (a.done - b.done) || a.created - b.created);
+  const cell = (key, head, cls) => {
+    const list = items(key);
+    return `<div class="wcell ${cls}"><div class="wh">${head}<span class="wc num">${list.length ? `${list.filter((x) => x.done).length}/${list.length}` : ""}</span></div>
+      ${list.map(row).join("")}
+      <form class="wform" data-date="${key}"><label class="vh" for="wf-${key}">Add a task</label><input id="wf-${key}" placeholder="+ add" autocomplete="off"></form></div>`;
+  };
+  $("#wk8").innerHTML = cell(listKey, `<span class="wd">weekly list</span>`, "list")
+    + dates.map((d, i) => cell(d, `<span class="wn num">${parseYmd(d).getDate()}</span><span class="wd">${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][i]}</span>`, d === t ? "today" : d < t ? "past" : "")).join("");
+  const week = S.data.todos.filter((x) => dates.includes(x.date) || x.date === listKey);
+  const first = parseYmd(dates[0]), last = parseYmd(dates[6]);
+  $("#todoSub").innerHTML = `<button class="iconbtn sm" data-action="todo-week" data-step="-1" aria-label="Previous week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button> ${first.getDate()} ${MONTHS[first.getMonth()].slice(0, 3)} – ${last.getDate()} ${MONTHS[last.getMonth()].slice(0, 3)} · ${week.filter((x) => x.done).length} of ${week.length} done <button class="iconbtn sm" data-action="todo-week" data-step="1" aria-label="Next week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>${S.todo.offset ? ' <button class="mini" data-action="todo-week" data-step="0">this week</button>' : ""}`;
 }
-$("#todoForm").addEventListener("submit", async (e) => {
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest(".wform");
+  if (!f) return;
   e.preventDefault();
-  const title = $("#todoTitle").value.trim();
+  const input = f.querySelector("input"), title = input.value.trim();
   if (!title) return;
-  $("#todoTitle").value = "";
-  await add("todo", { title, date: S.todo.day, done: false, priority: "soft" });
+  input.value = "";
+  await add("todo", { title, date: f.dataset.date, done: false, priority: "soft" });
   renderTodo();
+  $(`#wf-${CSS.escape(f.dataset.date)}`)?.focus();
 });
 
 /* ============================== news ============================== */
+// Keep English headlines only: drop anything written in an Indian script, and Hindi sections of sites.
+const INDIC = /[\u0900-\u0DFF]/;
+const isEnglish = (n) => !INDIC.test(n.title || "") && !/\/hindi\/|\/\/hindi\./i.test(n.link || "");
 function newsList() {
-  const all = S.data.news;
+  const all = S.data.news.filter(isEnglish);
   if (S.newsTab === "saved") return all.filter((n) => n.saved).sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
   return all.filter((n) => n.section === S.newsTab).sort((a, b) => (Date.parse(b.published) || b.created) - (Date.parse(a.published) || a.created));
 }
 function renderNews() {
   $$('[data-action="news-tab"]').forEach((b) => b.setAttribute("aria-pressed", b.dataset.tab === S.newsTab));
   const list = newsList();
-  const shown = list.slice(0, S.newsMore ? 25 : 6);
+  const base = S.view === "news" ? 12 : 6;
+  const shown = list.slice(0, S.newsMore ? 30 : base);
   $("#newsList").innerHTML = shown.length
     ? shown.map((n) => `<div class="news-item"><div class="src">${esc(n.source)}<span>· ${esc(ago(n.published) || "")}</span></div>
         <a class="h" href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}</a>
@@ -650,7 +665,7 @@ function renderNews() {
         ${n.saved ? `<button class="mini${n.revised ? " on" : ""}" data-action="news-revised" data-id="${esc(n.id)}">${n.revised ? "✓ revised" : "mark revised"}</button>` : ""}
         <button class="mini" data-action="news-sum" data-id="${esc(n.id)}">${n.summary ? (n.showSum ? "hide summary" : "show summary") : "✨ summarise"}</button></div>
         ${n.summary && n.showSum ? `<div class="summary">${md(n.summary)}</div>` : ""}</div>`).join("")
-      + (list.length > 6 ? `<button class="link" data-action="news-more" style="margin-top:6px">${S.newsMore ? "show fewer" : `show more (${Math.min(list.length, 25) - 6})`}</button>` : "")
+      + (list.length > base ? `<button class="link" data-action="news-more" style="margin-top:6px">${S.newsMore ? "show fewer" : `show more (${Math.min(list.length, 30) - base})`}</button>` : "")
     : `<p class="empty">${S.newsTab === "saved" ? "Save headlines here to build your revision log." : "No headlines yet. Press Refresh."}</p>`;
   const st = S.data.status.news;
   $("#newsStatus").textContent = st ? `updated ${ago(st.at)}${st.failed?.length ? ` · ${st.failed.length} source${st.failed.length > 1 ? "s" : ""} didn’t answer` : ""}` : "";
@@ -668,7 +683,7 @@ function parseFeed(xml, feed) {
     const pub = textOf(el, "pubDate") || textOf(el, "published") || textOf(el, "updated");
     const d = new Date(pub);
     return { key: `${feed.id}:${link || title}`, section: feed.section, source: feed.name, title, link, published: isNaN(d) ? "" : d.toISOString() };
-  }).filter((x) => x.title);
+  }).filter((x) => x.title && isEnglish(x));
 }
 async function refreshNews(manual = false) {
   const feeds = S.data.settings.newsFeeds || [];
@@ -827,7 +842,7 @@ function renderProjects() {
 function openRoom(id) {
   const r = room(id);
   if (!r) return;
-  if (r.special === "syllabus") { closeSheet(); S.study.tab = "syllabus"; renderStudy(); return $("#studyCard").scrollIntoView({ behavior: "smooth" }); }
+  if (r.special === "syllabus") { closeSheet(); S.study.tab = "syllabus"; renderStudy(); return go("study"); }
   if (r.special === "news") {
     const saved = S.data.news.filter((n) => n.saved);
     return sheet(r.name, `${saved.length} saved`, saved.length
@@ -954,6 +969,7 @@ async function openSettings(tab = "general") {
         <div class="field"><label for="cName">Name</label><input id="cName" placeholder="My Google Calendar"></div>
         <div class="field"><label for="cUrl">iCal link</label><input id="cUrl" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics  or  webcal://p..-caldav.icloud.com/…"></div>
         <div class="field"><span class="lab">Colour</span>${swatches("cColor", "sky")}</div>
+        <p class="sub" id="calNote" hidden style="color:var(--rose)"></p>
         <div class="actions"><button class="btn" data-action="cal-add">Add calendar</button></div></div>`;
   }
   if (tab === "ai") {
@@ -1015,6 +1031,27 @@ async function loadShortcutInfo() {
   } catch (e) { $("#scInfo").innerHTML = `<p class="sub">${esc(e.message)}</p>`; }
 }
 
+// Turn the links people commonly paste into a real calendar-file (iCal) link, or explain what's wrong.
+function fixCalendarLink(raw) {
+  let url = String(raw || "").trim().replace(/^<|>$/g, "");
+  if (!url) return { error: "Paste a calendar link first." };
+  if (/^p\d+-(caldav|calendars)\.icloud\.com\//i.test(url)) url = "https://" + url;
+  if (/^webcal:\/\//i.test(url)) url = url.replace(/^webcal:\/\//i, "https://");
+  if (/icloud\.com\/(calendar|invite)/i.test(url) && !/\/published\//i.test(url))
+    return { error: "That’s an iCloud invitation or web link, not a public calendar link. On the iPhone: Calendar → Calendars → ⓘ next to your calendar → turn on Public Calendar → Share Link → Copy. The link starts with webcal://" };
+  if (/calendar\.google\.com\/calendar\/embed/i.test(url)) {
+    const src = new URL(url).searchParams.get("src");
+    if (src) return { url: `https://calendar.google.com/calendar/ical/${encodeURIComponent(src)}/public/basic.ics` };
+  }
+  if (/calendar\.google\.com\/calendar\/(u\/|r\b|r\/)|[?&]cid=/i.test(url))
+    return { error: "That’s a Google Calendar page link. In Google Calendar on a computer: Settings → your calendar → Integrate calendar → copy “Secret address in iCal format”. It ends with basic.ics" };
+  if (!/^https?:\/\//i.test(url)) return { error: "Paste a link that starts with https:// or webcal://" };
+  return { url };
+}
+function sheetNote(msg) {
+  const box = $("#calNote");
+  if (box) { box.textContent = msg; box.hidden = false; } else toast(msg);
+}
 /* ============================== sheet ============================== */
 function sheet(title, sub, html) {
   $("#sheetTitle").textContent = title;
@@ -1032,6 +1069,14 @@ const ACTIONS = {
   "theme": () => setTheme(isDark() ? "light" : "dark"),
   "logout": async () => { await api("/api/logout", { body: {} }); location.reload(); },
   "sheet-close": closeSheet,
+  "go": (b) => { closeSheet(); go(b.dataset.view); },
+  "more": () => sheet("More", "", `<div class="grid2">
+      <button class="btn ghost" data-action="go" data-view="calendar">📅 Calendar</button>
+      <button class="btn ghost" data-action="go" data-view="projects">🌱 Projects</button>
+      <button class="btn ghost" data-action="ai-open">✨ Ask Cloudy</button>
+      <button class="btn ghost" data-action="decorate">☆ Stickers</button>
+      <button class="btn ghost" data-action="settings">⚙ Settings</button>
+    </div>`),
   "copy": async (b) => { try { await navigator.clipboard.writeText(b.dataset.v); toast("Copied"); } catch { toast("Select the text and copy it"); } },
   "swatch": (b) => { $$("button", b.parentElement).forEach((x) => x.setAttribute("aria-pressed", x === b)); },
 
@@ -1082,8 +1127,7 @@ const ACTIONS = {
   "rem-showdone": () => { S.showDoneRem = !S.showDoneRem; renderReminders(); },
 
   // to-do
-  "todo-day": (b) => { S.todo.day = b.dataset.date; renderTodo(); },
-  "todo-week": (b) => { S.todo.offset += +b.dataset.step; S.todo.day = weekDates(S.todo.offset)[0]; if (S.todo.offset === 0) S.todo.day = todayYmd(); renderTodo(); },
+  "todo-week": (b) => { S.todo.offset = +b.dataset.step === 0 ? 0 : S.todo.offset + +b.dataset.step; renderTodo(); },
   "todo-toggle": async (b) => { const t = find("todos", b.dataset.id); await patch(t, { done: !t.done }); renderTodo(); },
   "todo-prio": async (b) => { const t = find("todos", b.dataset.id); const i = PRIO.findIndex((p) => p.k === t.priority); await patch(t, { priority: PRIO[(i + 1) % PRIO.length].k }); renderTodo(); },
   "todo-delete": async (b) => { await drop("todo", b.dataset.id); renderTodo(); },
@@ -1154,8 +1198,11 @@ const ACTIONS = {
   "settings": (b) => openSettings(b.dataset.tab),
   "save-general": async () => { await saveSettings({ name: $("#sName").value.trim() || "lovely" }); setTheme($("#sTheme").value); renderHeader(); closeSheet(); toast("Saved"); },
   "cal-add": async () => {
-    const url = $("#cUrl").value.trim(), name = $("#cName").value.trim() || "My calendar";
-    if (!/^(https?|webcal):\/\//i.test(url)) return toast("Paste a link that starts with https:// or webcal://");
+    let url = $("#cUrl").value.trim();
+    const name = $("#cName").value.trim() || "My calendar";
+    const fixed = fixCalendarLink(url);
+    if (fixed.error) return sheetNote(fixed.error);
+    url = fixed.url;
     await saveSettings({ calendars: [...S.data.settings.calendars, { id: "cal-" + crypto.randomUUID().slice(0, 8), name, url, color: swatchValue("cColor") }] });
     await loadCalendars(true); openSettings("calendars");
   },
@@ -1562,7 +1609,7 @@ $("#stickerFile").addEventListener("change", async (e) => {
 });
 
 Object.assign(ACTIONS, {
-  "study-tab": (b) => { S.study.tab = b.dataset.tab; renderStudy(); if (b.closest("#studyBody")) $("#studyCard").scrollIntoView({ behavior: "smooth" }); },
+  "study-tab": (b) => { S.study.tab = b.dataset.tab; renderStudy(); },
   "study-week": (b) => { S.study.offset += +b.dataset.step; S.study.addDay = null; renderStudy(); },
   "study-addday": (b) => { S.study.addDay = b.dataset.date; renderStudy(); },
   "wp-prio": (b) => { const p = weekPlan(); const d = [...(p.prioDone || [false, false, false])]; d[+b.dataset.i] = !d[+b.dataset.i]; saveWeekPlan({ prioDone: d }, true); renderStudy(); },
@@ -1645,5 +1692,23 @@ ACTIONS["task-toggle"] = async (b) => {
 };
 
 /* ============================== start ============================== */
+/* ============================== pages ============================== */
+const VIEWS = { home: "", calendar: "your <em>calendar</em>", study: "study <em>planner</em>", habits: "daily <em>rituals</em>", news: "news <em>desk</em>", projects: "second <em>brain</em>" };
+S.view = "home";
+function setView(v) {
+  if (!(v in VIEWS)) v = "home";
+  S.view = v;
+  $("#board").dataset.view = v;
+  $$("[data-views]").forEach((el) => { el.hidden = !el.dataset.views.split(" ").includes(v); });
+  $$(".rail [data-view], .tabbar [data-view]").forEach((a) => a.classList.toggle("on", a.dataset.view === v));
+  $("#pageTitle").innerHTML = VIEWS[v];
+  document.title = v === "home" ? "Cloud Nine" : `${$("#pageTitle").textContent} · Cloud Nine`;
+  if (S.data) { if (v === "news") renderNews(); if (v === "calendar" || v === "home") renderCalendar(); renderStickers(); }
+  window.scrollTo({ top: 0 });
+}
+function go(v) { if (location.hash !== "#" + v) location.hash = v; else setView(v); }
+window.addEventListener("hashchange", () => setView(location.hash.slice(1)));
+setView(location.hash.slice(1) || "home");
+
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 boot();

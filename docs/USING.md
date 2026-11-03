@@ -1,6 +1,19 @@
 # Using Cloud Nine
 
-A quick tour of the dashboard, from top to bottom.
+## Getting around
+
+Cloud Nine has six pages. On a computer, use the panel on the left; on a phone, use the bar at the bottom (Calendar, Projects, Stickers, Cloudy and Settings are under **More**).
+
+| Page | What’s on it |
+|---|---|
+| **Home** | This week’s to-do, today’s focus, reminders, and the month calendar |
+| **Calendar** | The calendar on its own, full screen, in month or week view |
+| **Study** | Today’s focus beside the study planner: this week, syllabus, deadlines |
+| **Habits** | Daily rituals and today’s mood |
+| **News** | The news desk: current affairs, legal news and your saved headlines |
+| **Projects** | Your second brain: projects and their rooms |
+
+Home stays calm on purpose: everything else is one tap away.
 
 ## The top
 
@@ -13,7 +26,8 @@ A quick tour of the dashboard, from top to bottom.
 
 ## Calendar
 
-- Switch between **Week** and **Month**, and move with **‹ Today ›**.
+- The month calendar sits at the bottom of Home, full width. Open the **Calendar** page for it on its own.
+- Switch between **Month** and **Week**, and move with **‹ Today ›**.
 - **+ Event** adds an event saved in Cloud Nine. In the week view you can also **click an empty time** to add an event there.
 - Click any event to see its details. Events from Google or Apple open read-only; change those in their own apps.
 - In the month view, click a day to see everything on it.
@@ -34,20 +48,21 @@ Your study tasks for today, plus anything left unfinished from the past week (ma
 
 Open reminders, soonest first. Overdue ones turn red. Add one with an optional date and time. Reminders from your iPhone show the  logo (see [Apple Reminders](APPLE-REMINDERS.md)).
 
-## Weekly to-do
+## This week’s to-do
 
-Tap a day to see and add its tasks. The coloured dot is the priority: tap it to switch between soft, important and urgent. Use **‹ ›** to look at other weeks.
+The first thing on Home: a **weekly list** box for anything without a day, then one big box for each day of the week, like a paper weekly plan. Type in a box’s **+ add** and press Enter. The coloured dot is the priority: tap it to switch between soft, important and urgent. Use **‹ ›** at the top right to look at other weeks.
 
 ## News desk
 
-- **Current affairs** and **Legal** tabs fill up when you open the app (at most every 3 hours) or when you press **Refresh**.
+- On the **News** page. **Current affairs** and **Legal** tabs fill up when you open the app (at most every 3 hours) or when you press **Refresh**.
+- Only **English** headlines are shown. Headlines in Hindi or other Indian scripts are skipped.
 - **☆ save to my log** keeps a headline in your **Saved** tab and in the Study Desk revision log. Mark saved items **revised** as you go.
 - **✨ summarise** asks Cloudy for three key points and why the story matters.
 - Add or remove sources in **Settings → News**. Typing just a website, such as `vedantu.com`, follows it through Google News.
 
 ## Study planner
 
-A big card in the middle of the dashboard with three tabs.
+On the **Study** page, beside today’s focus. It has three tabs.
 
 **This week**: your **top 3 priorities**, **weekly goals**, and **study hours** (set a target; “achieved” counts finished study tasks and focus-timer minutes). Below that is a column for each day: tap **+ add** to give a day a study task and its subject. At the bottom are this week’s **assignments & deadlines** and a **weekly review**: what went well, what to improve, and notes. Use **‹ ›** to look at other weeks.
 

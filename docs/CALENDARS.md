@@ -48,6 +48,19 @@ Apple’s option is called **Public Calendar**. It creates a link that only work
 
 To stop sharing, turn **Public Calendar** off again. The link stops working.
 
+### If the Apple calendar says “couldn’t load”
+
+Go through these in order:
+
+1. **Is it an iCloud calendar?** Only calendars stored in **iCloud** can be made public. In the Calendar app’s **Calendars** list, the calendar must be under the **ICLOUD** heading. Calendars under *On My iPhone*, *Gmail* or *Exchange* have no Public Calendar switch.
+   - If yours is under **Gmail**, use the [Google steps](#google-calendar) instead.
+   - If it’s under *On My iPhone*, create a new iCloud calendar and move events into it.
+2. **Did you copy the right link?** It must start with `webcal://` and contain `/published/`. A link starting with `https://www.icloud.com/...` is an invitation link and won’t work. Cloud Nine tells you if you paste one of these.
+3. **Get a fresh link.** On the iPhone: **Calendar → Calendars → ⓘ** → turn **Public Calendar off**, wait a minute, turn it **on** again → **Share Link → Copy**. Apple sometimes breaks old public links; a new one fixes it. In Cloud Nine, **remove** the old calendar and **add** the new link.
+4. **Read the message.** **Settings → Calendars** shows the exact reason next to each calendar that couldn’t load.
+
+Cloud Nine already handles Apple’s two link styles (`…-caldav.icloud.com` and `…-calendars.icloud.com`) and tries both automatically.
+
 ## Other calendars
 
 Outlook, Proton, school timetables and sports fixtures usually offer an **ICS** or **iCal** link under “Share” or “Publish”. Paste it the same way.
