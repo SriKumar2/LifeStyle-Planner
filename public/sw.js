@@ -1,5 +1,5 @@
 // Keeps the app shell available offline and makes it installable. Data always comes fresh from /api.
-const VERSION = "cloud-nine-v1";
+const VERSION = "cloud-nine-v2";
 const SHELL = ["/", "/index.html", "/app.css", "/app.js", "/vendor/ical.min.js", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/icons/favicon-64.png"];
 
 self.addEventListener("install", (e) => {
