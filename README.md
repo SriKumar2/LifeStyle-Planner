@@ -1,7 +1,7 @@
 <p align="center"><img src="public/icons/icon-192.png" width="96" alt=""></p>
 
 <h1 align="center">Cloud Nine</h1>
-<p align="center"><i>a soft, pastel life planner for study, habits, calendars, news and an AI helper</i></p>
+<p align="center"><i>a soft, pastel life planner for study, routines, calendars, news and an AI helper</i></p>
 
 <p align="center"><img src="docs/images/dashboard.png" alt="The Cloud Nine dashboard: week calendar, today's study focus, reminders, weekly to-do, news desk, habits and projects on one screen" width="900"></p>
 
@@ -32,12 +32,13 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **Week and month calendar** that shows Google Calendar, Apple (iCloud) Calendar and Indian holidays together, plus events you add yourself.
 - **Today’s focus**: study tasks for the day, a 25-minute focus timer, and anything carried over from earlier in the week.
 - **Weekly to-do** with a tab for each day and soft, important and urgent priorities.
-- **Study planner**: top 3 priorities, weekly goals, study-hour target, a column per day, assignments & deadlines, and a weekly review.
-- **Syllabus & subjects**: paste a syllabus, track every topic from *to study* to *revised*, and send topics to today’s focus.
+- **Study planner**: a weekly study to-do board with a box per day, a study-hour target, top 3 priorities, weekly goals, deadlines and a weekly review.
+- **Syllabus by course**: keep each diploma, exam or certification separate, paste a syllabus, and track every topic from *to study* to *revised*. Subjects stay folded until you open them.
+- **Daily routine**: plan your morning, afternoon, evening and night, tick steps off, keep a streak, and choose which days each step happens.
 - **Stickers**: drag hand-drawn line-art stickers (sea creatures, books, scales of justice…) onto any card, or upload your own.
 - **Reminders**, including the ones on your iPhone (through a small Apple Shortcut).
-- **News desk**: current affairs for government exams and legal news. Save headlines to a revision log, mark them revised, and get AI summaries.
-- **Habits** tracker and a daily mood check-in.
+- **News desk**: English current affairs for government exams and legal news, with AI summaries.
+- **Habits** tracker, a daily mood check-in and routine notes.
 - **Countdowns** to exams, deadlines and special days.
 - **Second brain**: projects with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
 - **Cloudy (AI)**: a daily brief, chat about your week, a study-week planner that adds tasks for you, news summaries and quizzes.

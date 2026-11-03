@@ -110,12 +110,18 @@ function context(data, extra = {}) {
   if (data.countdowns.length) lines.push("Countdowns:\n" + data.countdowns.map((c) => `- ${c.title}: ${c.date}`).join("\n"));
   const subjects = data.subjects || [];
   if (subjects.length) {
-    lines.push("Syllabus:\n" + subjects.map((s) => {
+    const courseName = (s) => (data.courses || []).find((c) => c.id === s.courseId)?.name || "General";
+    lines.push("Syllabus (by course):\n" + subjects.map((s) => {
       const ts = (data.topics || []).filter((t) => t.subjectId === s.id);
       const done = ts.filter((t) => ["done", "revised"].includes(t.status)).length;
       const open = ts.filter((t) => !["done", "revised"].includes(t.status)).slice(0, 15).map((t) => `${t.unit ? t.unit + ": " : ""}${t.title}${t.status === "reading" ? " (reading)" : ""}`);
-      return `- ${s.name}${s.exam ? " (exam " + s.exam + ")" : ""}: ${done}/${ts.length} topics done.${open.length ? " Still to finish: " + open.join("; ") : ""}`;
+      return `- [${courseName(s)}] ${s.name}${s.exam ? " (exam " + s.exam + ")" : ""}: ${done}/${ts.length} topics done.${open.length ? " Still to finish: " + open.join("; ") : ""}`;
     }).join("\n"));
+  }
+  if ((data.routine || []).length) {
+    const today = extra.today || new Date().toISOString().slice(0, 10);
+    const done = new Set((data.routinelogs || []).filter((l) => l.date === today && l.done).map((l) => l.stepId));
+    lines.push("Daily routine (today):\n" + data.routine.map((r) => `- ${r.section}${r.time ? " " + r.time : ""}: ${r.title}${r.minutes ? " (" + r.minutes + " min)" : ""} ${done.has(r.id) ? "[done]" : "[not yet]"}`).join("\n"));
   }
   const due = (data.assignments || []).filter((a) => !a.done);
   if (due.length) lines.push("Assignments and deadlines:\n" + due.slice(0, 20).map((a) => `- ${a.title}${a.due ? " due " + a.due : ""} (priority ${a.priority || "M"})`).join("\n"));

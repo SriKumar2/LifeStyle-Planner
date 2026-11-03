@@ -8,9 +8,9 @@ Cloud Nine has six pages. On a computer, use the panel on the left; on a phone, 
 |---|---|
 | **Home** | This week’s to-do, today’s focus, reminders, and the month calendar |
 | **Calendar** | The calendar on its own, full screen, in month or week view |
-| **Study** | Today’s focus beside the study planner: this week, syllabus, deadlines |
-| **Habits** | Daily rituals and today’s mood |
-| **News** | The news desk: current affairs, legal news and your saved headlines |
+| **Study** | The study planner: this week’s study to-do, your syllabus by course, deadlines |
+| **Routine** | Your daily routine (morning to night), habits, mood and routine notes |
+| **News** | The news desk: current affairs and legal news |
 | **Projects** | Your second brain: projects and their rooms |
 
 Home stays calm on purpose: everything else is one tap away.
@@ -56,31 +56,38 @@ The first thing on Home: a **weekly list** box for anything without a day, then 
 
 - On the **News** page. **Current affairs** and **Legal** tabs fill up when you open the app (at most every 3 hours) or when you press **Refresh**.
 - Only **English** headlines are shown. Headlines in Hindi or other Indian scripts are skipped.
-- **☆ save to my log** keeps a headline in your **Saved** tab and in the Study Desk revision log. Mark saved items **revised** as you go.
 - **✨ summarise** asks Cloudy for three key points and why the story matters.
 - Add or remove sources in **Settings → News**. Typing just a website, such as `vedantu.com`, follows it through Google News.
 
 ## Study planner
 
-On the **Study** page, beside today’s focus. It has three tabs.
+On the **Study** page. It has three tabs.
 
-**This week**: your **top 3 priorities**, **weekly goals**, and **study hours** (set a target; “achieved” counts finished study tasks and focus-timer minutes). Below that is a column for each day: tap **+ add** to give a day a study task and its subject. At the bottom are this week’s **assignments & deadlines** and a **weekly review**: what went well, what to improve, and notes. Use **‹ ›** to look at other weeks.
+**This week** is the main view: a board with a box for each day of the week.
+
+- Type in a day’s **+ add a study task** box and press Enter. Pick the subject from the list that appears under the box.
+- Tick tasks off as you finish them. Each day shows how many hours you planned.
+- The first box, **this week**, holds your **study-hour target** (with a ring that fills as you study) and your **top 3 priorities**.
+- Under the board: **weekly goals**, what’s **due this week**, and a short **weekly review** (what went well, what to improve).
+- Use **‹ ›** at the top to look at other weeks.
 
 <p align="center"><img src="images/study-week.png" alt="This week in the study planner" width="720"></p>
 
-**Syllabus**: write down your subjects and their syllabus.
+**Syllabus** keeps every course separate, so it’s always clear what a subject belongs to.
 
-1. Type a subject name (for example “Paper 1 · Constitutional Law”) and press **Add**.
-2. Add topics one by one, or press **Paste syllabus** and paste the whole list. Lines that start with *Unit*, *Module*, *Chapter* or *Part*, or end with a colon, become unit headings. Bullets and numbering are removed for you.
-3. Tap a topic’s status to move it along: **to study → reading → done → revised**. Each subject shows its progress.
-4. **→ today** puts a topic into Today’s focus. Ticking that task off marks the topic done.
-5. **Edit subject** sets an exam date (shown as a countdown) and a colour.
+1. **Courses** sit in tabs across the top, for example *PG Diploma · ILI*, *Judiciary exam prep* or a certification. Press **+ course** to add one. Give it a type, an exam or end date, and a colour.
+2. Each course lists its **subjects** as single tidy rows, each with a progress bar. Nothing else shows until you need it, so the page stays short however long the syllabus gets.
+3. Tap a subject to open it. Topics are grouped by unit. Units you’ve finished fold into one line, and finished topics are hidden. Press **✓ done · show** to see them again.
+4. Add topics one by one, or press **Paste syllabus** and paste the whole list. Lines that start with *Unit*, *Module*, *Chapter* or *Part*, or end with a colon, become unit headings. Bullets and numbering are removed for you.
+5. Tap a topic’s status to move it along: **to study → reading → done → revised**.
+6. **→ today** puts a topic into Today’s focus on Home. Ticking that task off marks the topic done.
+7. **Edit subject** sets an exam date (shown as a countdown), a colour, and which course it belongs to. **Edit course** renames or removes a course.
 
-<p align="center"><img src="images/syllabus.png" alt="Syllabus tab" width="720"></p>
+<p align="center"><img src="images/syllabus.png" alt="Syllabus tab, organised by course" width="720"></p>
 
 **Deadlines**: every assignment with its subject, due date, priority (**H / M / L**) and a done box. Deadlines also appear on the calendar (📝) and in the daily brief.
 
-Cloudy can see your syllabus and deadlines, so you can ask things like “Which topics should I revise before the Paper 1 exam?”
+Cloudy can see your syllabus (by course), deadlines and today’s routine, so you can ask things like “Which topics should I revise before the Paper 1 exam?”
 
 ## Stickers
 
@@ -99,9 +106,19 @@ Press the ☆ **decorate** button (left rail on a computer) to open the sticker 
 
 <p align="center"><img src="images/ink.png" alt="Ink and paper theme" width="720"></p>
 
-## Habits
+## Routine
 
-Tap a circle to tick a habit for that day. Rename habits, change colours or add new ones with **edit habits**. Below the grid, pick how you feel today.
+The **Routine** page is where you write down your routine and follow it each day.
+
+- The first time, press **Start with a gentle routine** for a ready-made one you can change, or **Start from scratch**.
+- Your day is split into **morning, afternoon, evening and night**. Each step has a time, a name and how many minutes it takes. The part of the day you’re in now is marked **now**.
+- Tap the circle next to a step to tick it off. The top of the page shows how many steps you’ve done today and your **streak** (days in a row with at least 80% done).
+- **✎ Edit routine** lets you change times, names and minutes, remove steps, and add new ones to each part of the day. Tap the day letters (**M T W T F S S**) to choose which days a step happens, for example a long walk only on weekends. Changes save as you type.
+- **Routine notes** is a free space for the why: your non-negotiables, what you’re trying this week, anything you want to remember.
+
+<p align="center"><img src="images/routine.png" alt="The routine page" width="720"></p>
+
+**Daily rituals**, beside it, is the habit tracker. Tap a circle to tick a habit for that day. Rename habits, change colours or add new ones with **edit habits**. Below the grid, pick how you feel today.
 
 ## Second brain
 
@@ -110,7 +127,7 @@ Each project card shows a summary and its **rooms**. Tap a room to see, add and 
 | Project | Rooms |
 |---|---|
 | Soft Living | Books, shows & movies · Workout log |
-| Study Desk | Syllabus & subjects · ILI diploma planner · Saved headlines (revision log) |
+| Study Desk | Syllabus (every course, with its progress) |
 | Growth Lab | Certifications (free law certifications already listed) · Research ideas |
 
 Use **+ new project** for your own (for example “Moot court” or “Travel”). The **⋯** button on a card renames or removes it.

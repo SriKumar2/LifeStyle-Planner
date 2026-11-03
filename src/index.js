@@ -7,7 +7,7 @@ import { chat, brief, summarize, planWeek, testKey, listModels, buildChain } fro
 export { PlannerStore };
 
 const SESSION_DAYS = 180;
-const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg"]);
+const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg", "course", "routine", "routinelog"]);
 
 export default {
   async fetch(request, env) {
@@ -77,7 +77,7 @@ async function route(request, env, url) {
 
   if (p === "/api/settings" && m === "PUT") {
     const patch = await body(request);
-    const allowed = ["name", "timezone", "theme", "geminiModel", "geminiKey", "calendars", "newsFeeds", "projects", "customRooms"];
+    const allowed = ["name", "timezone", "theme", "geminiModel", "geminiKey", "calendars", "newsFeeds", "projects", "customRooms", "routineNotes"];
     const clean = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)));
     if (clean.calendars) clean.calendars = clean.calendars.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));
     if (clean.newsFeeds) clean.newsFeeds = clean.newsFeeds.map((c) => ({ ...c, url: normaliseFeedUrl(c.url) }));

@@ -43,7 +43,7 @@
     <a class="navbtn" href="#home" data-view="home" title="Home"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
     <a class="navbtn" href="#calendar" data-view="calendar" title="Calendar"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Calendar</span></a>
     <a class="navbtn" href="#study" data-view="study" title="Study planner &amp; syllabus"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg><span>Study</span></a>
-    <a class="navbtn" href="#habits" data-view="habits" title="Daily rituals"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M14 16.5l2 2 4-4"/></svg><span>Habits</span></a>
+    <a class="navbtn" href="#routine" data-view="routine" title="Routine &amp; rituals"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>Routine</span></a>
     <a class="navbtn" href="#news" data-view="news" title="News desk"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h11v14H7a2 2 0 0 1-2-2zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg><span>News</span></a>
     <a class="navbtn" href="#projects" data-view="projects" title="Second brain"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg><span>Projects</span></a>
     <div class="spacer"></div>
@@ -69,7 +69,7 @@
       </div>
     </header>
 
-    <header class="page-head" data-anchor="page" data-views="calendar study habits news projects">
+    <header class="page-head" data-anchor="page" data-views="calendar study routine news projects">
       <h1 id="pageTitle"></h1>
       <button class="ask" data-action="ai-open"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg><span>Ask Cloudy…</span><kbd>Ctrl K</kbd></button>
     </header>
@@ -82,7 +82,7 @@
         <div class="wk8" id="wk8"></div>
       </article>
 
-      <article class="card focus" id="focusCard" data-anchor="focus" data-views="home study" aria-labelledby="focT">
+      <article class="card focus" id="focusCard" data-anchor="focus" data-views="home" aria-labelledby="focT">
         <div class="card-head"><h2 id="focT">today’s <em>focus</em></h2><button class="link" data-action="plan-open">✨ plan my week</button></div>
         <div class="focus-top" id="focusTop"></div>
         <div id="focusList"></div>
@@ -144,18 +144,28 @@
           <div class="seg" role="group" aria-label="News type">
             <button aria-pressed="true" data-action="news-tab" data-tab="ca">Current affairs</button>
             <button aria-pressed="false" data-action="news-tab" data-tab="legal">Legal</button>
-            <button aria-pressed="false" data-action="news-tab" data-tab="saved">Saved</button>
           </div>
         </div>
         <div id="newsList"></div>
         <div class="news-foot"><span class="sub" id="newsStatus"></span><button class="mini" data-action="news-refresh">Refresh</button></div>
       </article>
 
-      <article class="card habit" data-anchor="habit" data-views="habits" aria-labelledby="habT">
+      <article class="card routine" id="routineCard" data-anchor="routine" data-views="routine" aria-labelledby="rtT">
+        <div class="card-head"><h2 id="rtT">today’s <em>routine</em></h2><span class="sub" id="rtSub"></span></div>
+        <div id="routineBody"></div>
+      </article>
+
+      <article class="card habit" data-anchor="habit" data-views="routine" aria-labelledby="habT">
         <div class="card-head"><h2 id="habT">daily <em>rituals</em></h2><button class="link" data-action="settings" data-tab="habits">edit habits</button></div>
         <div class="hgrid" id="hgrid"></div>
         <div class="mood" id="mood" role="group" aria-label="Today’s mood"></div>
         <p class="motto">remember, <em>consistency</em> over perfection.</p>
+      </article>
+
+      <article class="card rnotes" data-anchor="rnotes" data-views="routine" aria-labelledby="rnT">
+        <div class="card-head"><h2 id="rnT">routine <em>notes</em></h2><span class="sub" id="rnSaved"></span></div>
+        <label for="rnText" class="vh">Routine notes</label>
+        <textarea id="rnText" placeholder="Why this routine matters to me…&#10;My non-negotiables…&#10;Something I’m trying this week…"></textarea>
       </article>
 
       <section class="brain" id="brainSec" data-anchor="brain" data-views="projects" aria-labelledby="brainT">
@@ -169,7 +179,7 @@
   <nav class="tabbar" aria-label="Pages">
     <a href="#home" data-view="home"><svg class="ico" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Home</a>
     <a href="#study" data-view="study"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>Study</a>
-    <a href="#habits" data-view="habits"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M14 16.5l2 2 4-4"/></svg>Habits</a>
+    <a href="#routine" data-view="routine"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>Routine</a>
     <a href="#news" data-view="news"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h11v14H7a2 2 0 0 1-2-2zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg>News</a>
     <button data-action="more"><svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>More</button>
   </nav>

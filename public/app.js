@@ -90,7 +90,7 @@ async function api(path, { method, body } = {}) {
   if (!res.ok) throw new Error((data && data.error) || `Something went wrong (${res.status})`);
   return data;
 }
-const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs" };
+const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs" };
 async function add(kind, data, id) {
   const doc = await api("/api/docs", { body: { kind, data, id } });
   const arr = S.data[COLL[kind]];
@@ -159,12 +159,18 @@ async function boot() {
   }
   $("#login").hidden = true;
   $("#app").hidden = false;
-  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs"]) S.data[k] ||= [];
+  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs"]) S.data[k] ||= [];
+  // Older installs: subjects made before courses existed go into one course.
+  if (S.data.subjects.some((x) => !x.courseId)) (async () => {
+    const c = S.data.courses[0] || await add("course", { name: "PG Diploma · ILI", type: "Diploma", color: "sky", order: 0 });
+    for (const x of S.data.subjects.filter((y) => !y.courseId)) await patch(x, { courseId: c.id });
+    renderStudy();
+  })().catch(() => {});
   // Use the look chosen on another device, unless this device picked its own.
   if (S.data.settings.theme && (document.documentElement.dataset.theme || "system") !== S.data.settings.theme) setTheme(S.data.settings.theme, false);
   // Older installs: give the Study Desk project its new Syllabus room.
   const study = (S.data.settings.projects || []).find((p) => p.id === "study");
-  if (study && !study.rooms.includes("syllabus")) saveSettings({ projects: S.data.settings.projects.map((p) => (p.id === "study" ? { ...p, rooms: ["syllabus", ...p.rooms] } : p)) }).then(renderProjects).catch(() => {});
+  if (study && (study.rooms.join() !== "syllabus")) saveSettings({ projects: S.data.settings.projects.map((p) => (p.id === "study" ? { ...p, rooms: ["syllabus", ...p.rooms.filter((r) => !["syllabus", "ili", "studylog"].includes(r))] } : p)) }).then(renderProjects).catch(() => {});
   renderAll();
   loadCalendars();
   maybeRefreshNews();
@@ -188,7 +194,7 @@ document.addEventListener("visibilitychange", async () => {
 
 function renderAll() {
   renderHeader(); renderChips(); renderStrip(); renderCalendar(); renderFocus(); renderReminders();
-  renderTodo(); renderNews(); renderHabits(); renderMood(); renderStudy(); renderProjects(); renderChat(); renderStickers();
+  renderTodo(); renderNews(); renderHabits(); renderMood(); renderStudy(); renderRoutine(); renderProjects(); renderChat(); renderStickers();
 }
 
 /* ============================== header ============================== */
@@ -229,13 +235,13 @@ function localBrief() {
   const tasks = S.data.tasks.filter((x) => x.date === t && !x.done);
   const mins = tasks.reduce((a, x) => a + (+x.minutes || 0), 0);
   const due = S.data.reminders.filter((r) => !r.done && r.due && r.due.slice(0, 10) === t);
-  const toRevise = S.data.news.filter((n) => n.saved && !n.revised).length;
   const parts = [];
   parts.push(tasks.length ? `${tasks.length} study block${tasks.length > 1 ? "s" : ""} left today (${Math.floor(mins / 60) ? Math.floor(mins / 60) + " h " : ""}${mins % 60} min)` : "No study blocks planned for today yet");
   if (due.length) parts.push(`${due.length} reminder${due.length > 1 ? "s" : ""} due today`);
   const soon = (S.data.assignments || []).filter((a) => !a.done && a.due && daysBetween(new Date(), parseYmd(a.due)) <= 7 && daysBetween(new Date(), parseYmd(a.due)) >= 0).length;
   if (soon) parts.push(`${soon} deadline${soon > 1 ? "s" : ""} in the next 7 days`);
-  if (toRevise) parts.push(`${toRevise} saved headline${toRevise > 1 ? "s" : ""} to revise`);
+  const rd = (S.data.routine || []).length ? routineDay(t) : null;
+  if (rd && rd.total) parts.push(`routine ${rd.done}/${rd.total}`);
   return parts.join(" · ");
 }
 function renderStrip() {
@@ -661,12 +667,10 @@ function renderNews() {
   $("#newsList").innerHTML = shown.length
     ? shown.map((n) => `<div class="news-item"><div class="src">${esc(n.source)}<span>· ${esc(ago(n.published) || "")}</span></div>
         <a class="h" href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}</a>
-        <div class="news-actions"><button class="mini${n.saved ? " on" : ""}" data-action="news-save" data-id="${esc(n.id)}">${n.saved ? "★ saved" : "☆ save to my log"}</button>
-        ${n.saved ? `<button class="mini${n.revised ? " on" : ""}" data-action="news-revised" data-id="${esc(n.id)}">${n.revised ? "✓ revised" : "mark revised"}</button>` : ""}
-        <button class="mini" data-action="news-sum" data-id="${esc(n.id)}">${n.summary ? (n.showSum ? "hide summary" : "show summary") : "✨ summarise"}</button></div>
+        <div class="news-actions"><button class="mini" data-action="news-sum" data-id="${esc(n.id)}">${n.summary ? (n.showSum ? "hide summary" : "show summary") : "✨ summarise"}</button></div>
         ${n.summary && n.showSum ? `<div class="summary">${md(n.summary)}</div>` : ""}</div>`).join("")
       + (list.length > base ? `<button class="link" data-action="news-more" style="margin-top:6px">${S.newsMore ? "show fewer" : `show more (${Math.min(list.length, 30) - base})`}</button>` : "")
-    : `<p class="empty">${S.newsTab === "saved" ? "Save headlines here to build your revision log." : "No headlines yet. Press Refresh."}</p>`;
+    : `<p class="empty">No headlines yet. Press Refresh.</p>`;
   const st = S.data.status.news;
   $("#newsStatus").textContent = st ? `updated ${ago(st.at)}${st.failed?.length ? ` · ${st.failed.length} source${st.failed.length > 1 ? "s" : ""} didn’t answer` : ""}` : "";
 }
@@ -767,7 +771,6 @@ const ROOMS = {
     { k: "progress", l: "Progress %", t: "number" },
     { k: "link", l: "Resource link", t: "url" },
     { k: "notes", l: "Notes", t: "textarea" }] },
-  studylog: { name: "Saved headlines (revision log)", special: "news" },
   syllabus: { name: "Syllabus & subjects", special: "syllabus" },
   certs: { name: "Certifications", statusKey: "status", fields: [
     { k: "provider", l: "Provider", t: "text" },
@@ -816,12 +819,8 @@ function roomSummary(id) {
       + (next ? rowHtml("Next target", `${next.title} · ${fmtDay(parseYmd(next.date))}`, 'style="color:var(--rose)"') : "");
   }
   if (id === "syllabus") {
-    const subs = (S.data.subjects || []).slice(0, 2);
-    return subs.length ? subs.map((s, k) => { const pr = subjectProgress(s.id); return bar(s.name, pr.pct + "%", pr.pct, s.color || (k ? "powder" : "sky")); }).join("") : rowHtml("Syllabus", "add your subjects");
-  }
-  if (id === "studylog") {
-    const saved = S.data.news.filter((n) => n.saved);
-    return rowHtml("Saved headlines", `${saved.length} · ${saved.filter((n) => !n.revised).length} to revise`);
+    const cs = (S.data.courses || []).slice(0, 3);
+    return cs.length ? cs.map((c, k) => { const pr = courseProgress(c.id); return bar(c.name, pr.pct + "%", pr.pct, c.color || (k ? "powder" : "sky")); }).join("") : rowHtml("Syllabus", "add your first course");
   }
   if (id === "certs") {
     const cur = list.filter((i) => ["Enrolled", "Studying"].includes(i.status)).slice(0, 2);
@@ -1001,7 +1000,7 @@ async function openSettings(tab = "general") {
         <div class="actions"><button class="btn" data-action="feed-add">Add source</button></div></div>`;
   }
   if (tab === "backup") {
-    body = `<div class="box"><h3>Download a backup</h3><p>Saves everything (tasks, habits, reminders, projects, saved news) as one file. Your Gemini key is not included.</p><div class="actions"><a class="btn" href="/api/export" style="display:inline-grid;place-items:center;text-decoration:none">Download backup</a></div></div>
+    body = `<div class="box"><h3>Download a backup</h3><p>Saves everything (tasks, study plans, syllabus, routine, habits, reminders, projects) as one file. Your Gemini key is not included.</p><div class="actions"><a class="btn" href="/api/export" style="display:inline-grid;place-items:center;text-decoration:none">Download backup</a></div></div>
       <p class="sub">Your data lives in your own Cloudflare account, not on anyone else’s server.</p>`;
   }
   sheet("Settings", "", tabs + body);
@@ -1294,37 +1293,32 @@ function studyWeekHTML() {
   const weekTasks = S.data.tasks.filter((x) => dates.includes(x.date));
   const achieved = weekTasks.reduce((a, x) => a + taskMinutes(x), 0);
   const target = +p.targetHours || 0;
+  const pct = target ? Math.min(100, (achieved / 60 / target) * 100) : 0;
   const first = parseYmd(dates[0]), last = parseYmd(dates[6]);
-  $("#studySub").innerHTML = `<button class="iconbtn sm" data-action="study-week" data-step="-1" aria-label="Previous week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button> week of ${first.getDate()} ${MONTHS[first.getMonth()].slice(0, 3)} – ${last.getDate()} ${MONTHS[last.getMonth()].slice(0, 3)} <button class="iconbtn sm" data-action="study-week" data-step="1" aria-label="Next week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
-  const prios = [0, 1, 2].map((i) => `<div class="lineitem${p.prioDone?.[i] ? " done" : ""}"><span class="n num">${i + 1}.</span><input type="text" data-wp="priority" data-i="${i}" value="${esc(p.priorities?.[i] || "")}" placeholder="${["most important thing this week", "second", "third"][i]}" aria-label="Priority ${i + 1}"><button class="check" data-action="wp-prio" data-i="${i}" aria-pressed="${!!p.prioDone?.[i]}" aria-label="Mark priority ${i + 1} done">${tick}</button></div>`).join("");
-  const goals = (p.goals || []).map((g, i) => `<div class="lineitem${g.done ? " done" : ""}"><button class="check" data-action="wp-goal" data-i="${i}" aria-pressed="${!!g.done}" aria-label="Mark goal done">${tick}</button><span class="t" style="flex:1;${g.done ? "text-decoration:line-through;color:var(--ink-3)" : ""}">${esc(g.text)}</span><button class="del" data-action="wp-goal-del" data-i="${i}" aria-label="Remove goal">✕</button></div>`).join("");
+  $("#studySub").innerHTML = `<button class="iconbtn sm" data-action="study-week" data-step="-1" aria-label="Previous week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button> ${first.getDate()} ${MONTHS[first.getMonth()].slice(0, 3)} – ${last.getDate()} ${MONTHS[last.getMonth()].slice(0, 3)} <button class="iconbtn sm" data-action="study-week" data-step="1" aria-label="Next week" style="display:inline-grid;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  const R = 138;
+  const prios = [0, 1, 2].map((i) => `<div class="lineitem${p.prioDone?.[i] ? " done" : ""}"><span class="n num">${i + 1}.</span><input type="text" data-wp="priority" data-i="${i}" value="${esc(p.priorities?.[i] || "")}" placeholder="${["most important this week", "second priority", "third priority"][i]}" aria-label="Priority ${i + 1}"><button class="check" data-action="wp-prio" data-i="${i}" aria-pressed="${!!p.prioDone?.[i]}" aria-label="Mark priority ${i + 1} done">${tick}</button></div>`).join("");
+  const head = `<div class="wcell list swk-head">
+      <div class="wh"><span class="wd">this week</span></div>
+      <div class="hrs-mini"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="22" stroke="var(--line-soft)" stroke-width="6" fill="none"/><circle cx="27" cy="27" r="22" stroke="var(--sky)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${R}" stroke-dashoffset="${R - (R * pct) / 100}" transform="rotate(-90 27 27)"/></svg>
+        <div><b class="num">${hrs(achieved)} h</b> <span class="sub">studied of</span> <label for="wpTarget" class="vh">Target hours</label><input id="wpTarget" type="number" min="0" max="120" data-wp="target" value="${esc(target)}"> <span class="sub">h</span></div></div>
+      ${prios}</div>`;
   const days = dates.map((d, i) => {
     const ts = S.data.tasks.filter((x) => x.date === d).sort((a, b) => (a.done - b.done) || a.created - b.created);
     const planned = ts.reduce((a, x) => a + (+x.minutes || 0), 0);
-    const subjects = [...new Set(ts.map((x) => x.subject).filter(Boolean))].slice(0, 2).join(", ");
-    return `<div class="dcol${d === t ? " today" : ""}"><div class="dh"><span class="dn num">${parseYmd(d).getDate()}</span><b>${DOW[i]}</b><span class="num">${planned ? hrs(planned) + "h" : ""}</span></div>
-      ${subjects ? `<div class="sub" style="font-size:11px">${esc(subjects)}</div>` : ""}
-      ${ts.map((x) => `<div class="dtask${x.done ? " done" : ""}"><button class="check" data-action="task-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button><span>${esc(x.title)}</span></div>`).join("")}
-      ${S.study.addDay === d ? `<form class="dayform" data-date="${d}"><label for="dayIn" class="vh">New task</label><input id="dayIn" class="dayin" placeholder="task, then Enter" autocomplete="off"><label for="daySubj" class="vh">Subject</label><select id="daySubj" class="dayin" style="margin-top:4px">${subjectOptions(S.study.lastSubject || "")}</select></form>` : `<button class="addday" data-action="study-addday" data-date="${d}">+ add</button>`}
-    </div>`;
+    return `<div class="wcell${d === t ? " today" : d < t ? " past" : ""}"><div class="wh"><span class="wn num">${parseYmd(d).getDate()}</span><span class="wd">${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][i]}</span><span class="wc num">${planned ? hrs(planned) + " h" : ""}</span></div>
+      ${ts.map((x) => `<div class="task${x.done ? " done" : ""}"><button class="check" data-action="task-toggle" data-id="${esc(x.id)}" aria-pressed="${!!x.done}" aria-label="Mark ${esc(x.title)} done">${tick}</button><div class="t"><div>${esc(x.title)}</div><div class="meta num"><span class="tag" style="background:var(--${SUBJECT_COLOR[x.subject] || subjColor(x.subject) || "ice"})">${esc(x.subject || "Study")}</span> ${x.minutes ? x.minutes + " min" : ""}</div></div><button class="del" data-action="task-delete" data-id="${esc(x.id)}" aria-label="Delete">✕</button></div>`).join("")}
+      <form class="sform" data-date="${d}"><label class="vh" for="sf-${d}">Add a study task</label><input id="sf-${d}" placeholder="+ add a study task" autocomplete="off"><label class="vh" for="ss-${d}">Subject</label><select id="ss-${d}">${subjectOptions(S.study.lastSubject || "")}</select></form></div>`;
   }).join("");
+  const goals = (p.goals || []).map((g, i) => `<div class="lineitem${g.done ? " done" : ""}"><button class="check" data-action="wp-goal" data-i="${i}" aria-pressed="${!!g.done}" aria-label="Mark goal done">${tick}</button><span class="t" style="flex:1;${g.done ? "text-decoration:line-through;color:var(--ink-3)" : ""}">${esc(g.text)}</span><button class="del" data-action="wp-goal-del" data-i="${i}" aria-label="Remove goal">✕</button></div>`).join("");
   const due = S.data.assignments.filter((a) => !a.done && (!a.due || a.due <= dates[6])).sort((a, b) => String(a.due || "9").localeCompare(String(b.due || "9")));
-  return `<div class="wk-top">
-      <div class="panel"><h3>Top 3 priorities</h3>${prios}</div>
-      <div class="panel"><h3>Weekly goals</h3>${goals || '<p class="empty" style="margin:2px 0">What do you want to have done by Sunday?</p>'}<div class="lineitem"><span class="n">•</span><input type="text" id="goalIn" placeholder="add a goal, then Enter" aria-label="New weekly goal"></div></div>
-      <div class="panel hrs-panel"><h3>Study hours</h3>
-        <div class="row"><span>Target</span><b><label for="wpTarget" class="vh">Target hours</label><input id="wpTarget" type="number" min="0" max="120" step="1" data-wp="target" value="${esc(target)}"> hrs</b></div>
-        <div class="row"><span>Achieved</span><b class="num">${hrs(achieved)} hrs</b></div>
-        <div class="bar"><i style="width:${target ? Math.min(100, (achieved / 60 / target) * 100) : 0}%;background:var(--sky)"></i></div>
-        <span class="sub">Counts finished study tasks and focus-timer minutes.</span></div>
-    </div>
-    <div class="days7">${days}</div>
-    <div class="wk-bottom">
-      <div class="panel"><h3>Assignments &amp; deadlines</h3>${due.length ? deadlineTable(due) : '<p class="empty">Nothing due this week.</p>'}<button class="link" data-action="study-tab" data-tab="deadlines" style="margin-top:8px">all deadlines →</button></div>
-      <div class="panel"><h3>Weekly review</h3>
-        <label class="lab" for="wpWell">What went well</label><textarea id="wpWell" data-wp="well">${esc(p.well || "")}</textarea>
-        <label class="lab" for="wpImprove">What to improve</label><textarea id="wpImprove" data-wp="improve">${esc(p.improve || "")}</textarea>
-        <label class="lab" for="wpNotes">Notes</label><textarea id="wpNotes" data-wp="notes">${esc(p.notes || "")}</textarea></div>
+  const dueRows = due.map((a) => { const dd = a.due ? daysBetween(new Date(), parseYmd(a.due)) : null;
+    return `<div class="lineitem"><button class="check" data-action="as-toggle" data-id="${esc(a.id)}" aria-pressed="false" aria-label="Mark done">${tick}</button><span class="t" style="flex:1;min-width:0">${esc(a.title)} <span class="sub">${a.due ? "· " + fmtDay(parseYmd(a.due)) : ""}</span></span><span class="pr pr-${esc(a.priority || "M")}">${esc(a.priority || "M")}</span>${dd !== null && dd <= 2 ? `<span class="sub" style="color:var(--rose)">${dd < 0 ? "late" : dd === 0 ? "today" : dd + "d"}</span>` : ""}</div>`; }).join("");
+  return `<div class="wk8 swk">${head}${days}</div>
+    <div class="swk-foot">
+      <div class="panel"><h3>Weekly goals</h3>${goals}<div class="lineitem"><span class="n">+</span><input type="text" id="goalIn" placeholder="add a goal, then Enter" aria-label="New weekly goal"></div></div>
+      <div class="panel"><h3>Due this week</h3>${dueRows || '<p class="empty" style="margin:2px 0">Nothing due. Add deadlines in the Deadlines tab.</p>'}<button class="link" data-action="study-tab" data-tab="deadlines" style="margin-top:6px">all deadlines →</button></div>
+      <div class="panel"><h3>Weekly review</h3><label class="vh" for="wpWell">What went well</label><textarea id="wpWell" data-wp="well" rows="2" placeholder="what went well…">${esc(p.well || "")}</textarea><label class="vh" for="wpImprove">What to improve</label><textarea id="wpImprove" data-wp="improve" rows="2" placeholder="what to improve…">${esc(p.improve || "")}</textarea></div>
     </div>`;
 }
 function deadlineTable(list) {
@@ -1348,39 +1342,81 @@ function deadlinesHTML() {
       <label for="asPrio" class="vh">Priority</label><select id="asPrio"><option value="H">High</option><option value="M" selected>Medium</option><option value="L">Low</option></select>
       <button class="btn" type="submit">Add</button></form>`;
 }
+const COURSE_KINDS = ["Diploma", "Degree", "Exam prep", "Certification", "Course", "Other"];
+function courseTopics(cid) {
+  const ids = new Set(S.data.subjects.filter((s) => s.courseId === cid).map((s) => s.id));
+  return S.data.topics.filter((t) => ids.has(t.subjectId));
+}
+function courseProgress(cid) {
+  const ts = courseTopics(cid), done = ts.filter((t) => t.status === "done" || t.status === "revised").length;
+  return { total: ts.length, done, pct: ts.length ? Math.round((done / ts.length) * 100) : 0 };
+}
 function syllabusHTML() {
-  const subs = S.data.subjects;
-  if (!S.study.subject || !subs.find((s) => s.id === S.study.subject)) S.study.subject = subs[0]?.id || null;
-  const all = S.data.topics, doneAll = all.filter((t) => t.status === "done" || t.status === "revised").length;
-  $("#studySub").textContent = subs.length ? `${subs.length} subject${subs.length > 1 ? "s" : ""} · ${doneAll} of ${all.length} topics done` : "write down your subjects and syllabus";
-  const list = subs.map((s) => {
-    const pr = subjectProgress(s.id);
-    const exam = s.exam ? daysBetween(new Date(), parseYmd(s.exam)) : null;
-    return `<button class="subj" data-action="subj-open" data-id="${esc(s.id)}" aria-pressed="${s.id === S.study.subject}"><div class="top"><span class="dot" style="background:var(--${esc(s.color || "sky")});width:10px;height:10px"></span><b>${esc(s.name)}</b><span class="sub num">${pr.pct}%</span></div><div class="bar" style="margin:0"><i style="width:${pr.pct}%;background:var(--${esc(s.color || "sky")})"></i></div><div class="meta num">${pr.done}/${pr.total} topics${exam !== null && exam >= 0 ? ` · exam in ${exam} day${exam === 1 ? "" : "s"}` : ""}</div></button>`;
-  }).join("");
-  const left = `<div class="subjects">${list}<form class="addrow" id="subjForm" style="margin-top:4px"><label for="subjName" class="vh">New subject</label><input id="subjName" placeholder="new subject, e.g. Paper 1 · Constitutional Law" autocomplete="off" required><button class="btn" type="submit">Add</button></form></div>`;
-  const s = subs.find((x) => x.id === S.study.subject);
-  if (!s) return `<div class="syl">${left}<div class="panel"><h3>Your syllabus lives here</h3><p>Add a subject on the left, then list its units and topics, or paste the whole syllabus at once. Tick topics off as you study and revise them, and send any topic to today’s focus with one tap.</p></div></div>`;
-  const ts = topicsOf(s.id);
-  const units = [...new Set(ts.map((t) => t.unit || ""))];
-  const pr = subjectProgress(s.id);
-  const unitHTML = units.map((u) => {
-    const ut = ts.filter((t) => (t.unit || "") === u);
-    const ud = ut.filter((t) => t.status === "done" || t.status === "revised").length;
-    return `<div class="unit"><h4>${esc(u || "Topics")}<span class="num">${ud}/${ut.length}</span></h4>${ut.map((t) => {
-      const st = STATUSES.find((x) => x[0] === (t.status || "todo")) || STATUSES[0];
-      return `<div class="topic ${st[0]}"><button class="st ${st[0]}" data-action="topic-status" data-id="${esc(t.id)}" title="Tap to change">${st[1]}</button><div class="t" style="flex:1;min-width:0">${esc(t.title)}${t.date ? ` <span class="sub">· ${esc(fmtDay(parseYmd(t.date)))}</span>` : ""}</div>
-        <span class="tools"><button class="mini" data-action="topic-today" data-id="${esc(t.id)}" title="Add to today’s focus">→ today</button><button class="mini" data-action="topic-edit" data-id="${esc(t.id)}" aria-label="Edit">✎</button><button class="del" style="opacity:1" data-action="topic-delete" data-id="${esc(t.id)}" aria-label="Delete">✕</button></span></div>`;
-    }).join("")}</div>`;
-  }).join("");
-  return `<div class="syl">${left}<div class="panel" style="background:var(--card)">
-      <div class="subj-head"><div><h3>${esc(s.name)}</h3><div class="sub num">${pr.done} of ${pr.total} topics done${s.exam ? ` · exam ${esc(fmtDay(parseYmd(s.exam)))}` : ""}${s.notes ? ` · ${esc(s.notes)}` : ""}</div></div>
-        <div class="cal-tools"><button class="mini" data-action="syl-paste" data-id="${esc(s.id)}">Paste syllabus</button><button class="mini" data-action="subj-edit" data-id="${esc(s.id)}">Edit subject</button></div></div>
-      <div class="bar"><i style="width:${pr.pct}%;background:var(--${esc(s.color || "sky")})"></i></div>
-      ${ts.length ? unitHTML : '<p class="empty" style="margin-top:12px">No topics yet. Add them one by one below, or press <b>Paste syllabus</b> and paste the whole list.</p>'}
-      <form class="addrow" id="topicForm" data-subject="${esc(s.id)}"><label for="topicUnit" class="vh">Unit</label><input id="topicUnit" list="unitList" placeholder="unit (optional)" value="${esc(S.study.lastUnit || units[units.length - 1] || "")}" style="flex:0 1 170px"><datalist id="unitList">${units.filter(Boolean).map((u) => `<option value="${esc(u)}">`).join("")}</datalist>
+  const courses = S.data.courses;
+  if (!courses.length) {
+    $("#studySub").textContent = "organise your syllabus by course";
+    return `<div class="syl-empty"><h3>What are you studying?</h3><p>Start with a course, such as your diploma, an exam you’re preparing for, or a certification. Each course holds its own subjects, and each subject its own units and topics.</p>
+      <div class="chips">${["PG Diploma · ILI", "Judiciary exam prep", "DPDPA certificate", "CIPP/E"].map((n) => `<button class="mini" data-action="course-quick" data-name="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+      <div class="actions" style="justify-content:flex-start"><button class="btn" data-action="course-new">+ Add a course</button></div></div>`;
+  }
+  if (!S.study.course || !courses.find((c) => c.id === S.study.course)) S.study.course = courses[0].id;
+  const c = courses.find((x) => x.id === S.study.course);
+  const subs = S.data.subjects.filter((s) => s.courseId === c.id);
+  const all = courses.reduce((a, x) => { const p = courseProgress(x.id); return { d: a.d + p.done, t: a.t + p.total }; }, { d: 0, t: 0 });
+  $("#studySub").textContent = `${courses.length} course${courses.length > 1 ? "s" : ""} · ${all.d} of ${all.t} topics done`;
+  const tabs = courses.map((x) => { const p = courseProgress(x.id);
+    return `<button class="ctab" data-action="course-open" data-id="${esc(x.id)}" aria-pressed="${x.id === c.id}"><span class="dot" style="background:var(--${esc(x.color || "sky")})"></span>${esc(x.name)}<span class="num">${p.pct}%</span></button>`; }).join("");
+  const cp = courseProgress(c.id);
+  const days = c.date ? daysBetween(new Date(), parseYmd(c.date)) : null;
+  return `<div class="ctabs" role="tablist" aria-label="Courses">${tabs}<button class="ctab add" data-action="course-new">+ course</button></div>
+    <div class="course-head"><div class="ch-l"><h3>${esc(c.name)}</h3><div class="sub num">${esc(c.type || "Course")} · ${subs.length} subject${subs.length === 1 ? "" : "s"} · ${cp.done} of ${cp.total} topics done${days !== null ? ` · ${c.type === "Exam prep" || c.type === "Certification" ? "exam" : "ends"} ${esc(fmtDay(parseYmd(c.date)))}${days >= 0 ? ` (${days} days)` : ""}` : ""}</div></div>
+      <div class="ch-r"><div class="bar" style="width:140px;margin:0"><i style="width:${cp.pct}%;background:var(--${esc(c.color || "sky")})"></i></div><button class="mini" data-action="course-edit" data-id="${esc(c.id)}">Edit course</button></div></div>
+    <div class="sjs">${subs.map(subjectRow).join("") || '<p class="empty">No subjects yet. Add the first one below.</p>'}</div>
+    <form class="addrow" id="subjForm"><label for="subjName" class="vh">New subject</label><input id="subjName" placeholder="add a subject to ${esc(c.name)}, e.g. Paper 1 · Constitutional Law" autocomplete="off" required><button class="btn" type="submit">Add subject</button></form>`;
+}
+function subjectRow(s) {
+  const pr = subjectProgress(s.id), open = S.study.open === s.id;
+  const exam = s.exam ? daysBetween(new Date(), parseYmd(s.exam)) : null;
+  let h = `<div class="sj${open ? " open" : ""}"><button class="sj-sum" data-action="subj-toggle" data-id="${esc(s.id)}" aria-expanded="${open}">
+      <span class="dot" style="background:var(--${esc(s.color || "sky")})"></span><b>${esc(s.name)}</b>
+      <span class="sj-bar"><i style="width:${pr.pct}%;background:var(--${esc(s.color || "sky")})"></i></span>
+      <span class="num sub">${pr.done}/${pr.total}</span>${exam !== null && exam >= 0 ? `<span class="sub num exam">exam in ${exam}d</span>` : ""}<span class="chev" aria-hidden="true">›</span></button>`;
+  if (open) {
+    const ts = topicsOf(s.id);
+    const showDone = S.study.showDone === s.id;
+    const doneCount = ts.filter((t) => t.status === "done" || t.status === "revised").length;
+    const visible = showDone ? ts : ts.filter((t) => t.status !== "done" && t.status !== "revised");
+    const units = [...new Set(ts.map((t) => t.unit || ""))];
+    const unitHTML = units.map((u) => {
+      const ut = visible.filter((t) => (t.unit || "") === u);
+      const all = ts.filter((t) => (t.unit || "") === u);
+      if (!ut.length && !showDone) return all.length ? `<div class="unit done-unit"><h4>${esc(u || "Topics")}<span class="num">✓ ${all.length}/${all.length}</span></h4></div>` : "";
+      const ud = all.filter((t) => t.status === "done" || t.status === "revised").length;
+      return `<div class="unit"><h4>${esc(u || "Topics")}<span class="num">${ud}/${all.length}</span></h4>${ut.map((t) => {
+        const st = STATUSES.find((x) => x[0] === (t.status || "todo")) || STATUSES[0];
+        return `<div class="topic ${st[0]}"><button class="st ${st[0]}" data-action="topic-status" data-id="${esc(t.id)}" title="Tap to change">${st[1]}</button><div class="t" style="flex:1;min-width:0">${esc(t.title)}${t.date ? ` <span class="sub">· ${esc(fmtDay(parseYmd(t.date)))}</span>` : ""}</div>
+          <span class="tools"><button class="mini" data-action="topic-today" data-id="${esc(t.id)}" title="Add to today’s focus">→ today</button><button class="mini" data-action="topic-edit" data-id="${esc(t.id)}" aria-label="Edit">✎</button><button class="del" style="opacity:1" data-action="topic-delete" data-id="${esc(t.id)}" aria-label="Delete">✕</button></span></div>`;
+      }).join("")}</div>`;
+    }).join("");
+    h += `<div class="sj-body">
+      <div class="sj-tools"><span class="sub">${s.notes ? esc(s.notes) : ""}</span><span class="cal-tools">${doneCount ? `<button class="mini" data-action="topic-showdone" data-id="${esc(s.id)}">${showDone ? "hide done" : `✓ ${doneCount} done · show`}</button>` : ""}<button class="mini" data-action="syl-paste" data-id="${esc(s.id)}">Paste syllabus</button><button class="mini" data-action="subj-edit" data-id="${esc(s.id)}">Edit subject</button></span></div>
+      ${ts.length ? unitHTML : '<p class="empty">No topics yet. Add them below, or press <b>Paste syllabus</b> to paste the whole list.</p>'}
+      <form class="addrow" id="topicForm" data-subject="${esc(s.id)}"><label for="topicUnit" class="vh">Unit</label><input id="topicUnit" list="unitList" placeholder="unit (optional)" value="${esc(S.study.lastUnit || units[units.length - 1] || "")}" style="flex:0 1 180px"><datalist id="unitList">${units.filter(Boolean).map((u) => `<option value="${esc(u)}">`).join("")}</datalist>
         <label for="topicTitle" class="vh">Topic</label><input id="topicTitle" placeholder="topic, e.g. Article 21 – right to life" autocomplete="off" required><button class="btn" type="submit">Add topic</button></form>
-    </div></div>`;
+    </div>`;
+  }
+  return h + "</div>";
+}
+function openCourse(c) {
+  sheet(c ? "Edit course" : "New course", "a course holds its own subjects and syllabus", `
+    <div class="field"><label for="coName">Course name</label><input id="coName" value="${esc(c?.name || S.study.quickName || "")}" placeholder="PG Diploma · ILI"></div>
+    <div class="grid2"><div class="field"><label for="coKind">Type</label><select id="coKind">${COURSE_KINDS.map((k) => `<option ${k === (c?.type || "Diploma") ? "selected" : ""}>${k}</option>`).join("")}</select></div>
+    <div class="field"><label for="coDate">Exam or end date (optional)</label><input id="coDate" type="date" value="${esc(c?.date || "")}"></div></div>
+    <div class="field"><span class="lab">Colour</span>${swatches("coColor", c?.color || COLORS[S.data.courses.length % COLORS.length])}</div>
+    <div class="actions">${c ? `<button class="btn danger left" data-action="course-delete" data-id="${esc(c.id)}">Delete course</button>` : ""}<button class="btn" data-action="course-save" data-id="${esc(c?.id || "")}">Save</button></div>
+    ${c ? '<p class="sub">Deleting a course also deletes its subjects and topics.</p>' : ""}`);
+  S.study.quickName = "";
+  $("#coName").focus();
 }
 // "Paste syllabus": headings (Unit/Module/Chapter/Part…, or lines ending in ":") start a unit; every other line is a topic.
 function parseSyllabus(text) {
@@ -1399,6 +1435,7 @@ function openSubject(s) {
     <div class="field"><label for="sjName">Subject name</label><input id="sjName" value="${esc(s?.name || "")}" placeholder="Paper 1 · Constitutional Law"></div>
     <div class="grid2"><div class="field"><label for="sjExam">Exam date (optional)</label><input id="sjExam" type="date" value="${esc(s?.exam || "")}"></div>
     <div class="field"><label for="sjNotes">Short note (optional)</label><input id="sjNotes" value="${esc(s?.notes || "")}" placeholder="textbook, teacher, credits…"></div></div>
+    <div class="field"><label for="sjCourse">Course</label><select id="sjCourse">${S.data.courses.map((c) => `<option value="${esc(c.id)}" ${c.id === (s?.courseId || S.study.course) ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
     <div class="field"><span class="lab">Colour</span>${swatches("sjColor", s?.color || "sky")}</div>
     <div class="actions">${s ? `<button class="btn danger left" data-action="subj-delete" data-id="${esc(s.id)}">Delete subject</button>` : ""}<button class="btn" data-action="subj-save" data-id="${esc(s?.id || "")}">Save</button></div>
     ${s ? '<p class="sub">Deleting a subject also deletes its topics.</p>' : ""}`);
@@ -1448,8 +1485,8 @@ document.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = $("#subjName").value.trim();
     if (!name) return;
-    const s = await add("subject", { name, color: COLORS[S.data.subjects.length % COLORS.length], order: S.data.subjects.length });
-    S.study.subject = s.id; renderStudy(); renderProjects();
+    const s = await add("subject", { name, courseId: S.study.course, color: COLORS[S.data.subjects.length % COLORS.length], order: S.data.subjects.length });
+    S.study.open = s.id; renderStudy(); renderProjects();
   }
   if (f.id === "topicForm") {
     e.preventDefault();
@@ -1621,7 +1658,7 @@ Object.assign(ACTIONS, {
   "subj-open": (b) => { S.study.subject = b.dataset.id; renderStudy(); },
   "subj-edit": (b) => openSubject(find("subjects", b.dataset.id)),
   "subj-save": async (b) => {
-    const data = { name: $("#sjName").value.trim() || "Subject", exam: $("#sjExam").value, notes: $("#sjNotes").value.trim(), color: swatchValue("sjColor") };
+    const data = { name: $("#sjName").value.trim() || "Subject", exam: $("#sjExam").value, notes: $("#sjNotes").value.trim(), color: swatchValue("sjColor"), courseId: $("#sjCourse")?.value || S.study.course };
     if (b.dataset.id) {
       const s = find("subjects", b.dataset.id), old = s.name;
       await patch(s, data);
@@ -1692,10 +1729,177 @@ ACTIONS["task-toggle"] = async (b) => {
 };
 
 /* ============================== start ============================== */
+/* ============================== routine ============================== */
+S.rt = { edit: false };
+const SECTIONS = [
+  { k: "morning", name: "morning", icon: "🌅", range: "5 am – 12", color: "ice" },
+  { k: "afternoon", name: "afternoon", icon: "☀️", range: "12 – 5 pm", color: "mint" },
+  { k: "evening", name: "evening", icon: "🌇", range: "5 – 9 pm", color: "periwinkle" },
+  { k: "night", name: "night", icon: "🌙", range: "9 pm – late", color: "powder" },
+];
+const STARTER = [
+  ["morning", "07:00", "Wake up, open the curtains", 5], ["morning", "07:05", "Glass of water", 2], ["morning", "07:10", "Stretch or yoga", 15],
+  ["morning", "07:30", "Skim today’s headlines", 20], ["morning", "08:00", "Write 3 priorities", 5],
+  ["afternoon", "13:00", "Lunch away from the desk", 30], ["afternoon", "15:30", "Short walk", 10],
+  ["evening", "18:30", "Movement or workout", 30], ["evening", "20:00", "Plan tomorrow", 10],
+  ["night", "21:30", "Skincare", 10], ["night", "22:00", "Read 10 pages", 20], ["night", "22:30", "Phone away", 1], ["night", "23:00", "Lights out", 0],
+];
+const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const dayIdx = (d) => (d.getDay() + 6) % 7;
+function nowSection() { const h = new Date().getHours(); return h >= 5 && h < 12 ? "morning" : h < 17 ? "afternoon" : h < 21 ? "evening" : "night"; }
+const appliesOn = (r, d) => !r.days || !r.days.length || r.days.includes(dayIdx(d));
+const rlogId = (stepId, date) => `rl:${stepId}:${date}`;
+const stepDone = (stepId, date) => !!S.data.routinelogs.find((l) => l.id === rlogId(stepId, date) && l.done);
+function routineDay(date) {
+  const d = parseYmd(date), steps = S.data.routine.filter((r) => appliesOn(r, d));
+  const done = steps.filter((r) => stepDone(r.id, date)).length;
+  return { total: steps.length, done };
+}
+function routineStreak() {
+  let n = 0;
+  const today = routineDay(todayYmd());
+  if (today.total && today.done / today.total >= 0.8) n++;
+  for (let i = 1; i < 40; i++) {
+    const r = routineDay(ymd(addDays(new Date(), -i)));
+    if (!r.total) continue;
+    if (r.done / r.total >= 0.8) n++; else break;
+  }
+  return n;
+}
+function fmtClock(t) { if (!t) return ""; const [h, m] = t.split(":").map(Number); return fmtTime(new Date(2000, 0, 1, h, m)); }
+function renderRoutine() {
+  const el = $("#routineBody");
+  if (!el) return;
+  const rn = $("#rnText");
+  if (rn && document.activeElement !== rn) rn.value = S.data.settings.routineNotes || "";
+  const t = todayYmd(), today = new Date(), now = nowSection();
+  if (!S.data.routine.length && !S.rt.edit) {
+    el.innerHTML = `<div class="rt-empty"><div class="rt-sun" aria-hidden="true">🌅 ☀️ 🌇 🌙</div><h3>Build your daily routine</h3><p>Plan your mornings, afternoons, evenings and nights, then tick each step off as you go. A gentle routine makes busy study days feel lighter.</p>
+      <div class="actions" style="justify-content:center"><button class="btn" data-action="rt-starter">Start with a gentle routine</button><button class="btn ghost" data-action="rt-edit">Start from scratch</button></div></div>`;
+    $("#rtSub").textContent = "";
+    return;
+  }
+  const day = routineDay(t), pct = day.total ? Math.round((day.done / day.total) * 100) : 0, streak = routineStreak();
+  const R = 157;
+  $("#rtSub").innerHTML = "";
+  const summary = `<div class="rt-sum">
+      <svg class="ring" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="25" stroke="var(--line-soft)" stroke-width="7" fill="none"/><circle cx="31" cy="31" r="25" stroke="var(--sky)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="${R}" stroke-dashoffset="${R - (R * pct) / 100}" transform="rotate(-90 31 31)"/></svg>
+      <div class="rt-stat"><div class="big num">${day.done} / ${day.total}</div><div class="sub">steps done today</div></div>
+      <div class="rt-stat"><div class="big num">${streak}</div><div class="sub">day streak ${streak ? "✿" : ""}</div></div>
+      <div class="rt-stat"><div class="big">${SECTIONS.find((s) => s.k === now).icon}</div><div class="sub">it’s ${now} now</div></div>
+      <div class="rt-actions">${S.rt.edit ? '<button class="btn" data-action="rt-edit">Done editing</button>' : '<button class="btn ghost" data-action="rt-edit">✎ Edit routine</button>'}</div>
+    </div>`;
+  const secs = SECTIONS.map((sec) => {
+    const all = S.data.routine.filter((r) => r.section === sec.k).sort((a, b) => String(a.time || "99").localeCompare(String(b.time || "99")) || (a.order ?? 0) - (b.order ?? 0));
+    const steps = S.rt.edit ? all : all.filter((r) => appliesOn(r, today));
+    const dn = steps.filter((r) => stepDone(r.id, t)).length;
+    const rows = steps.map((r) => {
+      if (S.rt.edit) return `<li class="rstep edit">
+          <label class="vh" for="rtt-${esc(r.id)}">Time</label><input id="rtt-${esc(r.id)}" type="time" value="${esc(r.time || "")}" data-rt="time" data-id="${esc(r.id)}">
+          <label class="vh" for="rtn-${esc(r.id)}">Step</label><input id="rtn-${esc(r.id)}" class="rt-title" value="${esc(r.title)}" data-rt="title" data-id="${esc(r.id)}">
+          <label class="vh" for="rtm-${esc(r.id)}">Minutes</label><input id="rtm-${esc(r.id)}" type="number" min="0" max="600" class="rt-min" value="${esc(r.minutes ?? "")}" data-rt="minutes" data-id="${esc(r.id)}" title="minutes">
+          <span class="rt-days" role="group" aria-label="Days">${WEEKDAYS.map((w, i) => `<button type="button" data-action="rt-day" data-id="${esc(r.id)}" data-d="${i}" aria-pressed="${!r.days || !r.days.length || r.days.includes(i)}" aria-label="${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}">${w}</button>`).join("")}</span>
+          <button class="del" style="opacity:1" data-action="rt-delete" data-id="${esc(r.id)}" aria-label="Remove step">✕</button></li>`;
+      const done = stepDone(r.id, t);
+      return `<li class="rstep${done ? " done" : ""}"><button class="rdot" data-action="rt-toggle" data-id="${esc(r.id)}" aria-pressed="${done}" aria-label="Mark ${esc(r.title)} done">${tick}</button>
+        <span class="rtime num">${esc(fmtClock(r.time))}</span><span class="rtitle">${esc(r.title)}</span>${r.minutes ? `<span class="rmin num">${esc(r.minutes)} min</span>` : ""}</li>`;
+    }).join("");
+    return `<section class="rsec${sec.k === now ? " cur" : ""}" style="--sec:var(--${sec.color})">
+        <header><span class="ricon" aria-hidden="true">${sec.icon}</span><div><h3>${sec.name}</h3><span class="sub">${sec.range}</span></div><span class="rcount num">${steps.length ? `${dn}/${steps.length}` : ""}</span>${sec.k === now ? '<span class="nowtag">now</span>' : ""}</header>
+        <ol class="rline">${rows || `<li class="rempty">${S.rt.edit ? "No steps yet." : "Nothing planned. Rest is part of a routine too."}</li>`}</ol>
+        ${S.rt.edit ? `<form class="rt-add" data-section="${sec.k}"><label class="vh" for="rta-${sec.k}t">Time</label><input id="rta-${sec.k}t" type="time"><label class="vh" for="rta-${sec.k}">New step</label><input id="rta-${sec.k}" placeholder="+ add a ${sec.name} step" autocomplete="off"><button class="btn sm" type="submit">Add</button></form>` : ""}
+      </section>`;
+  }).join("");
+  el.innerHTML = summary + `<div class="rsecs">${secs}</div>` + (S.rt.edit ? '<p class="sub" style="margin:10px 0 0">Tap the day letters to choose which days a step happens (all lit = every day). Changes save as you type.</p>' : "");
+}
+document.addEventListener("change", async (e) => {
+  const el = e.target.closest("[data-rt]");
+  if (!el) return;
+  const r = find("routine", el.dataset.id);
+  if (!r) return;
+  const k = el.dataset.rt;
+  await patch(r, { [k]: k === "minutes" ? (el.value === "" ? "" : +el.value) : el.value.trim() });
+  if (k === "time") renderRoutine();
+});
+let rnTimer = null;
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "rnText") return;
+  $("#rnSaved").textContent = "saving…";
+  clearTimeout(rnTimer);
+  const v = e.target.value;
+  rnTimer = setTimeout(async () => {
+    try { await saveSettings({ routineNotes: v }); $("#rnSaved").textContent = "saved ✓"; } catch (err) { $("#rnSaved").textContent = ""; toast(err.message); }
+  }, 700);
+});
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest(".rt-add");
+  if (!f) return;
+  e.preventDefault();
+  const sec = f.dataset.section, title = $(`#rta-${sec}`).value.trim(), time = $(`#rta-${sec}t`).value;
+  if (!title) return;
+  await add("routine", { section: sec, time, title, minutes: "", days: [], order: S.data.routine.length });
+  renderRoutine(); $(`#rta-${sec}`)?.focus();
+});
+
+Object.assign(ACTIONS, {
+  "course-open": (b) => { S.study.course = b.dataset.id; S.study.open = null; renderStudy(); },
+  "course-new": () => openCourse(null),
+  "course-quick": (b) => { S.study.quickName = b.dataset.name; openCourse(null); },
+  "course-edit": (b) => openCourse(find("courses", b.dataset.id)),
+  "course-save": async (b) => {
+    const data = { name: $("#coName").value.trim() || "My course", type: $("#coKind").value, date: $("#coDate").value, color: swatchValue("coColor") };
+    if (b.dataset.id) await patch(find("courses", b.dataset.id), data);
+    else { const c = await add("course", { ...data, order: S.data.courses.length }); S.study.course = c.id; }
+    closeSheet(); renderStudy(); renderProjects();
+  },
+  "course-delete": async (b) => {
+    const id = b.dataset.id;
+    for (const sj of S.data.subjects.filter((x) => x.courseId === id)) { for (const t of topicsOf(sj.id)) await drop("topic", t.id); await drop("subject", sj.id); }
+    await drop("course", id);
+    S.study.course = null; closeSheet(); renderStudy(); renderProjects();
+  },
+  "subj-toggle": (b) => { S.study.open = S.study.open === b.dataset.id ? null : b.dataset.id; S.study.showDone = null; renderStudy(); },
+  "topic-showdone": (b) => { S.study.showDone = S.study.showDone === b.dataset.id ? null : b.dataset.id; renderStudy(); },
+  "rt-starter": async (b) => {
+    b.disabled = true;
+    let i = 0;
+    for (const [section, time, title, minutes] of STARTER) await add("routine", { section, time, title, minutes, days: [], order: i++ });
+    renderRoutine(); renderStrip(); toast("Your routine is ready. Edit it any time.");
+  },
+  "rt-edit": () => { S.rt.edit = !S.rt.edit; renderRoutine(); },
+  "rt-toggle": async (b) => {
+    const t = todayYmd(), id = rlogId(b.dataset.id, t);
+    const log = S.data.routinelogs.find((l) => l.id === id);
+    if (log) await patch(log, { done: !log.done }); else await add("routinelog", { stepId: b.dataset.id, date: t, done: true }, id);
+    renderRoutine(); renderStrip();
+  },
+  "rt-day": async (b) => {
+    const r = find("routine", b.dataset.id), d = +b.dataset.d;
+    let days = r.days && r.days.length ? [...r.days] : [0, 1, 2, 3, 4, 5, 6];
+    days = days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort();
+    if (!days.length) return toast("A step needs at least one day");
+    await patch(r, { days: days.length === 7 ? [] : days });
+    renderRoutine();
+  },
+  "rt-delete": async (b) => { await drop("routine", b.dataset.id); renderRoutine(); },
+});
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest(".sform");
+  if (!f) return;
+  e.preventDefault();
+  const d = f.dataset.date, title = $(`#sf-${d}`).value.trim(), subject = $(`#ss-${d}`).value;
+  if (!title) return;
+  S.study.lastSubject = subject;
+  await add("task", { title, subject, minutes: 45, date: d, done: false });
+  renderStudy(); renderFocus(); renderStrip();
+  $(`#sf-${d}`)?.focus();
+});
+
 /* ============================== pages ============================== */
-const VIEWS = { home: "", calendar: "your <em>calendar</em>", study: "study <em>planner</em>", habits: "daily <em>rituals</em>", news: "news <em>desk</em>", projects: "second <em>brain</em>" };
+const VIEWS = { home: "", calendar: "your <em>calendar</em>", study: "study <em>planner</em>", routine: "routine &amp; <em>rituals</em>", news: "news <em>desk</em>", projects: "second <em>brain</em>" };
 S.view = "home";
 function setView(v) {
+  if (v === "habits") v = "routine";
   if (!(v in VIEWS)) v = "home";
   S.view = v;
   $("#board").dataset.view = v;
@@ -1703,7 +1907,7 @@ function setView(v) {
   $$(".rail [data-view], .tabbar [data-view]").forEach((a) => a.classList.toggle("on", a.dataset.view === v));
   $("#pageTitle").innerHTML = VIEWS[v];
   document.title = v === "home" ? "Cloud Nine" : `${$("#pageTitle").textContent} · Cloud Nine`;
-  if (S.data) { if (v === "news") renderNews(); if (v === "calendar" || v === "home") renderCalendar(); renderStickers(); }
+  if (S.data) { if (v === "news") renderNews(); if (v === "calendar" || v === "home") renderCalendar(); if (v === "routine") renderRoutine(); renderStickers(); }
   window.scrollTo({ top: 0 });
 }
 function go(v) { if (location.hash !== "#" + v) location.hash = v; else setView(v); }
