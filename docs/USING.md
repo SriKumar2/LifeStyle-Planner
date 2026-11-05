@@ -6,7 +6,7 @@ Cloud Nine has six pages. On a computer, use the panel on the left; on a phone, 
 
 | Page | What’s on it |
 |---|---|
-| **Home** | This week’s to-do, today’s focus, reminders, and the month calendar |
+| **Home** | This week’s to-do, today’s focus, to-do & lists, reminders, and the month calendar |
 | **Calendar** | The calendar on its own, full screen, in month or week view |
 | **Study** | The study planner: this week’s study to-do, your syllabus by course, deadlines |
 | **Routine** | Your daily routine (morning to night), habits, mood and routine notes |
@@ -43,6 +43,16 @@ Your study tasks for today, plus anything left unfinished from the past week (ma
 - **✨ plan my week** asks Cloudy to suggest study tasks for the next 7 days. Untick any you don’t want, then add the rest.
 
 <p align="center"><img src="images/focus-timer.png" alt="Focus timer running" width="420"></p>
+
+## To-do & lists
+
+On **Home**, between Today’s focus and Reminders. Use it for everyday to-dos and checklists that don’t belong to a particular day.
+
+- Type in **+ add an item** and press Enter. Tick an item when it’s done: it moves to the bottom, crossed out. Tap an item’s text to change it.
+- **+ new list** makes another list, for example *Groceries*, *Packing* or *Errands*. Lists appear as tabs, each showing how many items are still open.
+- The bar shows how much is done. **clear done** removes the ticked items. **✎ edit** renames a list, changes its colour or deletes it.
+
+<p align="center"><img src="images/checklists.png" alt="To-do and lists card on Home" width="720"></p>
 
 ## Reminders
 
@@ -132,7 +142,12 @@ Each project card shows a summary and its **rooms**. Tap a room to see, add and 
 | Study Desk | Syllabus (every course, with its progress) |
 | Growth Lab | Certifications (free law certifications already listed) · Research ideas |
 
-Use **+ new project** for your own (for example “Moot court” or “Travel”). The **⋯** button on a card renames or removes it.
+Use **+ new project** for your own (for example “Moot court” or “Travel”). Choose what kind it is:
+
+- **Checklist**: things to tick off, shown right on the project card with a progress bar and an add box.
+- **Collection**: a room for notes and items, like the ones above.
+
+The **⋯** button on a card renames or removes it, and **Show a checklist on this project** adds a checklist to any project.
 
 <p align="center"><img src="images/room.png" alt="A project room" width="640"></p>
 

@@ -36,11 +36,12 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **Syllabus by course**: keep each diploma, exam or certification separate, paste a syllabus, and track every topic from *to study* to *revised*. Subjects stay folded until you open them.
 - **Daily routine**: plan your morning, afternoon, evening and night, tick steps off, keep a streak, and choose which days each step happens.
 - **Stickers**: drag hand-drawn line-art stickers (sea creatures, books, scales of justice…) onto any card, or upload your own.
+- **To-do & lists**: everyday to-dos and checklists (groceries, packing, errands) on the home screen.
 - **Reminders**, including the ones on your iPhone (through a small Apple Shortcut).
 - **News desk**: English current affairs for government exams, legal news, and a Leisure tab for Substack newsletters, with AI summaries.
 - **Habits** tracker, a daily mood check-in and routine notes.
 - **Countdowns** to exams, deadlines and special days.
-- **Second brain**: projects with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
+- **Second brain**: projects as checklists, or with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
 - **Cloudy (AI)**: a daily brief, chat about your week, a study-week planner that adds tasks for you, news summaries and quizzes.
 - **Three looks**: Ocean milk (pastel day), Deep ocean (night) and Ink & paper (navy on cream).
 
