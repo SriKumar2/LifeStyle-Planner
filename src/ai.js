@@ -123,6 +123,8 @@ function context(data, extra = {}) {
     const done = new Set((data.routinelogs || []).filter((l) => l.date === today && l.done).map((l) => l.stepId));
     lines.push("Daily routine (today):\n" + data.routine.map((r) => `- ${r.section}${r.time ? " " + r.time : ""}: ${r.title}${r.minutes ? " (" + r.minutes + " min)" : ""} ${done.has(r.id) ? "[done]" : "[not yet]"}`).join("\n"));
   }
+  const lists = (data.checklists || []).filter((c) => (c.items || []).some((i) => !i.done));
+  if (lists.length) lines.push("To-do lists and checklists (unticked items):\n" + lists.map((c) => `- ${c.name}: ${c.items.filter((i) => !i.done).slice(0, 15).map((i) => i.t).join("; ")}`).join("\n"));
   const due = (data.assignments || []).filter((a) => !a.done);
   if (due.length) lines.push("Assignments and deadlines:\n" + due.slice(0, 20).map((a) => `- ${a.title}${a.due ? " due " + a.due : ""} (priority ${a.priority || "M"})`).join("\n"));
   const ili = data.items.filter((i) => i.room === "ili" && i.status !== "Done");

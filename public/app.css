@@ -135,9 +135,9 @@ button.chip:hover{border-color:var(--powder);color:var(--ink)}
 .board[data-view="routine"]{grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);grid-template-rows:auto 1fr;grid-template-areas:"routine habit" "routine rnotes";align-items:stretch}
 .board[data-view="projects"]{grid-template-columns:minmax(0,1fr);grid-template-areas:"brain"}
 .board[data-view="news"] .news{max-width:1040px;width:100%;justify-self:center}
-.board[data-view="home"]{align-items:stretch}
-.board[data-view="home"] .focus,.board[data-view="home"] .remind{display:flex;flex-direction:column}
-.board[data-view="home"] .focus .add,.board[data-view="home"] .remind .add{margin-top:auto;padding-top:10px}
+.board[data-view="home"]{align-items:stretch;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"todo todo todo" "focus checks remind" "cal cal cal"}
+.board[data-view="home"] .focus,.board[data-view="home"] .remind,.board[data-view="home"] .checks{display:flex;flex-direction:column}
+.board[data-view="home"] .focus .add,.board[data-view="home"] .remind .add,.board[data-view="home"] .checks .add{margin-top:auto;padding-top:10px}
 .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;position:relative}
 .page-head h1{margin:0;font-family:var(--display);font-weight:500;font-size:clamp(26px,2.6vw,36px);color:var(--ocean)}
 .page-head h1 em{font-family:var(--script);font-weight:300;color:var(--milk);font-size:1.12em}
@@ -496,6 +496,7 @@ body.decorating main{padding-bottom:180px}
   .rail{display:none}
   main{padding:calc(14px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
   .board{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"todo" "focus" "remind" "cal"}
+  .board[data-view="home"]{grid-template-areas:"todo" "focus" "checks" "remind" "cal"}
   .board[data-view="study"]{grid-template-areas:"study"}
   .board[data-view="routine"]{grid-template-areas:"routine" "habit" "rnotes"}
   .wk8{grid-template-columns:minmax(0,1fr)}
@@ -643,3 +644,35 @@ html{scroll-behavior:smooth}
 .rnotes textarea{flex:1;min-height:180px;width:100%;resize:vertical;border:1px solid var(--line-soft);border-radius:14px;padding:12px 14px;font:inherit;font-size:14px;line-height:1.75;color:var(--ink);
   background:repeating-linear-gradient(180deg,transparent 0 calc(1.75em - 1px),var(--line-soft) calc(1.75em - 1px) 1.75em) 0 12px/100% 1.75em local,var(--card)}
 .rnotes textarea:focus{outline:2px solid var(--powder);outline-offset:1px}
+
+/* to-do & checklists */
+.checks{grid-area:checks;min-width:0}
+.checks #clBody{display:flex;flex-direction:column;flex:1}
+.cl-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px}
+.cl-tabs:empty{display:none}
+.cl-tabs .ctab{padding:5px 11px;font-size:12.5px}
+.cl-prog{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.cl-prog .bar{flex:1;margin:0}
+.cl-items{display:flex;flex-direction:column}
+.cl-items .link{align-self:flex-start;margin-top:6px}
+.cl-item{align-items:center}
+.cl-t{flex:1;min-width:0;border:0;background:transparent;padding:3px 4px;margin-left:-4px;border-radius:6px;font:inherit;font-size:14px;color:var(--ink);outline:none}
+.cl-t:focus{background:var(--paper);box-shadow:0 0 0 1px var(--powder)}
+.cl-item.done .cl-t{text-decoration:line-through;color:var(--ink-3)}
+.pcl{display:flex;flex-direction:column}
+.pcl .add{margin-top:8px}
+.ptype{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ptype button{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-content:center;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);align-items:center}
+.ptype button .ico{grid-row:span 2;width:22px;height:22px;color:var(--ocean)}
+.ptype button b{font-weight:600;color:var(--ink)}
+.ptype button span{font-size:12px;color:var(--ink-3);line-height:1.35}
+.ptype button[aria-pressed="true"]{border-color:var(--ocean);background:var(--ice);box-shadow:0 0 0 1px var(--ocean)}
+.tickline{display:flex;align-items:center;gap:8px;margin:4px 0 12px;font-size:14px;color:var(--ink-2)}
+.tickline input{width:16px;height:16px;accent-color:var(--ocean)}
+@media (max-width:1100px) and (min-width:721px){
+  .board[data-view="home"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"todo todo" "focus remind" "checks checks" "cal cal"}
+}
+@media (max-width:480px){.ptype{grid-template-columns:1fr}}
+.board[data-view="home"] .add select{flex:1 1 90px}
+.board[data-view="home"] .remind .add input.due{flex:1 1 150px}
+.board[data-view="home"] .focus .add #taskTitle{flex-basis:100%}

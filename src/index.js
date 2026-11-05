@@ -7,7 +7,7 @@ import { chat, brief, summarize, planWeek, testKey, listModels, buildChain } fro
 export { PlannerStore };
 
 const SESSION_DAYS = 180;
-const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg", "course", "routine", "routinelog"]);
+const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg", "course", "routine", "routinelog", "checklist"]);
 
 export default {
   async fetch(request, env) {

@@ -48,6 +48,7 @@ const appleIcon = '<svg class="apple" viewBox="0 0 24 24" aria-label="from Apple
 const ICONS = {
   leaf: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg>',
   book: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>',
+  check: '<svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
   cap: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4zM6 10v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/></svg>',
   star: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.4 7.2 18.9l.9-5.4-3.9-3.8 5.4-.8z"/></svg>',
 };
@@ -90,7 +91,7 @@ async function api(path, { method, body } = {}) {
   if (!res.ok) throw new Error((data && data.error) || `Something went wrong (${res.status})`);
   return data;
 }
-const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs" };
+const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs", checklist: "checklists" };
 async function add(kind, data, id) {
   const doc = await api("/api/docs", { body: { kind, data, id } });
   const arr = S.data[COLL[kind]];
@@ -159,7 +160,7 @@ async function boot() {
   }
   $("#login").hidden = true;
   $("#app").hidden = false;
-  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs"]) S.data[k] ||= [];
+  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs", "checklists"]) S.data[k] ||= [];
   // Older installs: subjects made before courses existed go into one course.
   if (S.data.subjects.some((x) => !x.courseId)) (async () => {
     const c = S.data.courses[0] || await add("course", { name: "PG Diploma · ILI", type: "Diploma", color: "sky", order: 0 });
@@ -217,7 +218,7 @@ document.addEventListener("visibilitychange", async () => {
 });
 
 function renderAll() {
-  renderHeader(); renderChips(); renderStrip(); renderCalendar(); renderFocus(); renderReminders();
+  renderHeader(); renderChips(); renderStrip(); renderCalendar(); renderFocus(); renderReminders(); renderChecklists();
   renderTodo(); renderNews(); renderHabits(); renderMood(); renderStudy(); renderRoutine(); renderProjects(); renderChat(); renderStickers();
 }
 
@@ -867,8 +868,9 @@ function renderProjects() {
   const ps = S.data.settings.projects || [];
   $("#projects").innerHTML = ps.map((p) => `<article class="card proj">
       <div class="ptitle"><span class="sw" style="background:var(--${esc(p.color || "ice")})">${ICONS[p.icon] || ICONS.star}</span><h3>${esc(p.name)}</h3><button class="iconbtn sm" data-action="project-edit" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">⋯</button></div>
+      ${p.checklist && clFind(p.checklist) ? `<div class="pcl">${checklistHTML(clFind(p.checklist), 6)}</div>` : ""}
       ${(p.rooms || []).map(roomSummary).join("")}
-      <div class="rooms">${(p.rooms || []).map((r) => `<button data-action="room-open" data-room="${esc(r)}">${esc(room(r)?.name || r)}</button>`).join("")}</div>
+      ${(p.rooms || []).length ? `<div class="rooms">${p.rooms.map((r) => `<button data-action="room-open" data-room="${esc(r)}">${esc(room(r)?.name || r)}</button>`).join("")}</div>` : ""}
     </article>`).join("") || '<p class="empty">Add a project to start your second brain.</p>';
 }
 function openRoom(id) {
@@ -910,6 +912,10 @@ function openProject(p) {
   sheet(isNew ? "New project" : "Edit project", isNew ? "a new space in your second brain" : "", `
     <div class="field"><label for="pName">Name</label><input id="pName" value="${esc(p.name)}" placeholder="Fitness, Travel, Moot court…"></div>
     <div class="field"><span class="lab">Colour</span>${swatches("pColor", p.color || "sky")}</div>
+    ${isNew ? `<div class="field"><span class="lab">What kind of project?</span><div class="ptype">
+        <button type="button" data-action="proj-type" data-type="checklist" aria-pressed="true">${ICONS.check}<b>Checklist</b><span>Things to tick off, right on the project card</span></button>
+        <button type="button" data-action="proj-type" data-type="rooms" aria-pressed="false">${ICONS.book}<b>Collection</b><span>A room for notes and items, like books, workouts or ideas</span></button></div></div>`
+      : `<label class="tickline"><input type="checkbox" id="pChecklist" ${p.checklist ? "checked" : ""}> Show a checklist on this project</label>`}
     <div class="actions">${isNew ? "" : `<button class="btn danger left" data-action="project-delete" data-id="${esc(p.id)}">Remove project</button>`}<button class="btn" data-action="project-save" data-id="${esc(p.id || "")}">Save</button></div>
     ${isNew ? "" : '<p class="sub">Removing a project hides it from the dashboard. Items inside it are kept in your backup.</p>'}`);
   $("#pName").focus();
@@ -1202,8 +1208,18 @@ const ACTIONS = {
     const name = $("#pName").value.trim() || "My project", color = swatchValue("pColor");
     const s = S.data.settings;
     let projects = [...(s.projects || [])], customRooms = [...(s.customRooms || [])];
-    if (b.dataset.id) projects = projects.map((p) => (p.id === b.dataset.id ? { ...p, name, color } : p));
-    else {
+    if (b.dataset.id) {
+      const p = projects.find((x) => x.id === b.dataset.id), cur = p.checklist && clFind(p.checklist), want = $("#pChecklist").checked;
+      let checklist = p.checklist;
+      if (want && !cur) checklist = (await add("checklist", { name, color, items: [], projectId: p.id })).id;
+      if (!want && cur) { await drop("checklist", cur.id); checklist = ""; }
+      if (want && cur) await patch(cur, { name, color });
+      projects = projects.map((x) => (x.id === p.id ? { ...x, name, color, checklist } : x));
+    } else if ($('[data-action="proj-type"][aria-pressed="true"]')?.dataset.type === "checklist") {
+      const pid = "p-" + crypto.randomUUID().slice(0, 8);
+      const c = await add("checklist", { name, color, items: [], projectId: pid });
+      projects.push({ id: pid, name, color, icon: "check", rooms: [], checklist: c.id });
+    } else {
       const rid = "custom-" + crypto.randomUUID().slice(0, 8);
       customRooms.push({ id: rid, name });
       projects.push({ id: "p-" + rid, name, color, icon: "star", rooms: [rid] });
@@ -1211,7 +1227,11 @@ const ACTIONS = {
     await saveSettings({ projects, customRooms });
     closeSheet(); renderProjects();
   },
-  "project-delete": async (b) => { await saveSettings({ projects: S.data.settings.projects.filter((p) => p.id !== b.dataset.id) }); closeSheet(); renderProjects(); },
+  "project-delete": async (b) => {
+    const cl = (S.data.settings.projects || []).find((p) => p.id === b.dataset.id)?.checklist;
+    if (cl && clFind(cl)) await drop("checklist", cl);
+    await saveSettings({ projects: S.data.settings.projects.filter((p) => p.id !== b.dataset.id) }); closeSheet(); renderProjects();
+  },
 
   // Cloudy
   "ai-open": () => openAI(),
@@ -1766,6 +1786,94 @@ ACTIONS["task-toggle"] = async (b) => {
 };
 
 /* ============================== start ============================== */
+/* ============================== to-do & checklists ============================== */
+// Named lists (To-do, Groceries, Packing…) on Home. A Second Brain project can also hold one checklist.
+S.cl = { open: null, more: {} };
+const CL_IDEAS = ["To-do", "Groceries", "Errands", "Packing", "Books to buy", "Before exams"];
+const homeLists = () => S.data.checklists.filter((c) => !c.projectId).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.created - b.created);
+function clProgress(c) {
+  const it = c.items || [], d = it.filter((i) => i.done).length;
+  return { d, t: it.length, left: it.length - d, pct: it.length ? Math.round((d / it.length) * 100) : 0 };
+}
+function checklistHTML(c, limit = 0) {
+  const p = clProgress(c);
+  const items = [...(c.items || [])].sort((a, b) => a.done - b.done);
+  const shown = limit && !S.cl.more[c.id] ? items.slice(0, limit) : items;
+  const rows = shown.map((i) => `<div class="task cl-item${i.done ? " done" : ""}"><button class="check" data-action="cl-toggle" data-list="${esc(c.id)}" data-item="${esc(i.id)}" aria-pressed="${!!i.done}" aria-label="Tick ${esc(i.t)}">${tick}</button>
+      <label class="vh" for="cli-${esc(i.id)}">Item</label><input class="cl-t" id="cli-${esc(i.id)}" value="${esc(i.t)}" data-list="${esc(c.id)}" data-item="${esc(i.id)}" autocomplete="off">
+      <button class="del" data-action="cl-del" data-list="${esc(c.id)}" data-item="${esc(i.id)}" aria-label="Remove ${esc(i.t)}">✕</button></div>`).join("");
+  const more = items.length > shown.length ? `<button class="link" data-action="cl-more" data-list="${esc(c.id)}">+ ${items.length - shown.length} more</button>`
+    : limit && S.cl.more[c.id] && items.length > limit ? `<button class="link" data-action="cl-more" data-list="${esc(c.id)}">show less</button>` : "";
+  return `<div class="cl-prog"><div class="bar"><i style="width:${p.pct}%;background:var(--${esc(c.color || "sky")})"></i></div><span class="sub num">${p.d}/${p.t}</span>${p.d ? `<button class="mini" data-action="cl-clear" data-list="${esc(c.id)}">clear done</button>` : ""}</div>
+    <div class="cl-items">${rows || '<p class="empty">Nothing here yet. Add the first item below.</p>'}${more}</div>
+    <form class="add cl-add" data-list="${esc(c.id)}"><label class="vh" for="cla-${esc(c.id)}">New item</label><input id="cla-${esc(c.id)}" placeholder="+ add an item" autocomplete="off"><button class="btn" type="submit">Add</button></form>`;
+}
+function renderChecklists() {
+  const el = $("#clBody");
+  if (!el) return;
+  const lists = homeLists();
+  if (!lists.find((c) => c.id === S.cl.open)) S.cl.open = lists[0]?.id || null;
+  const c = lists.find((x) => x.id === S.cl.open);
+  $("#clTabs").innerHTML = lists.length > 1 || (c && c.name !== "To-do")
+    ? lists.map((x) => { const p = clProgress(x); return `<button class="ctab" data-action="cl-open" data-id="${esc(x.id)}" aria-pressed="${x.id === S.cl.open}"><span class="dot" style="background:var(--${esc(x.color || "sky")})"></span>${esc(x.name)}${p.left ? `<span class="num">${p.left}</span>` : ""}</button>`; }).join("")
+    : "";
+  $("#clSub").innerHTML = c ? `<button class="mini" data-action="cl-edit" data-id="${esc(c.id)}" aria-label="Edit ${esc(c.name)}">✎ edit</button>` : "";
+  el.innerHTML = c ? checklistHTML(c)
+    : `<p class="empty">Jot down anything you need to do, or make a checklist for groceries, packing or errands.</p>
+       <form class="add cl-add" data-list="new"><label class="vh" for="cla-new">New to-do</label><input id="cla-new" placeholder="+ add a to-do" autocomplete="off"><button class="btn" type="submit">Add</button></form>`;
+}
+const clFind = (id) => S.data.checklists.find((c) => c.id === id);
+async function clSave(c, items) { await patch(c, { items }); renderChecklists(); renderProjects(); }
+function openList(c) {
+  sheet(c ? "Edit list" : "New list", c ? "" : "a to-do list or a checklist", `
+    <div class="field"><label for="clName">Name</label><input id="clName" value="${esc(c?.name || "")}" placeholder="Groceries, Packing for Goa…"></div>
+    ${c ? "" : `<div class="chips" style="margin:-4px 0 12px">${CL_IDEAS.map((n) => `<button class="mini" type="button" data-action="cl-idea" data-name="${esc(n)}">${esc(n)}</button>`).join("")}</div>`}
+    <div class="field"><span class="lab">Colour</span>${swatches("clColor", c?.color || COLORS[homeLists().length % COLORS.length])}</div>
+    <div class="actions">${c ? `<button class="btn danger left" data-action="cl-delete" data-id="${esc(c.id)}">Delete list</button>` : ""}<button class="btn" data-action="cl-save" data-id="${esc(c?.id || "")}">Save</button></div>`);
+  $("#clName").focus();
+}
+const newItem = (t) => ({ id: crypto.randomUUID().slice(0, 8), t, done: false });
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest(".cl-add");
+  if (!f) return;
+  e.preventDefault();
+  const input = f.querySelector("input"), t = input.value.trim();
+  if (!t) return;
+  input.value = "";
+  let c = clFind(f.dataset.list), id = f.dataset.list;
+  if (!c) { c = await add("checklist", { name: "To-do", color: "sky", items: [newItem(t)], order: 0 }); S.cl.open = id = c.id; renderChecklists(); }
+  else await clSave(c, [...(c.items || []), newItem(t)]);
+  $(`.cl-add[data-list="${CSS.escape(id)}"] input`)?.focus();
+});
+document.addEventListener("change", async (e) => {
+  const el = e.target.closest(".cl-t");
+  if (!el) return;
+  const c = clFind(el.dataset.list);
+  if (!c) return;
+  const t = el.value.trim();
+  await clSave(c, t ? c.items.map((i) => (i.id === el.dataset.item ? { ...i, t } : i)) : c.items.filter((i) => i.id !== el.dataset.item));
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.closest?.(".cl-t")) e.target.blur(); });
+Object.assign(ACTIONS, {
+  "cl-open": (b) => { S.cl.open = b.dataset.id; renderChecklists(); },
+  "cl-toggle": (b) => { const c = clFind(b.dataset.list); if (c) clSave(c, c.items.map((i) => (i.id === b.dataset.item ? { ...i, done: !i.done } : i))); },
+  "cl-del": (b) => { const c = clFind(b.dataset.list); if (c) clSave(c, c.items.filter((i) => i.id !== b.dataset.item)); },
+  "cl-clear": (b) => { const c = clFind(b.dataset.list); if (c) clSave(c, c.items.filter((i) => !i.done)); },
+  "cl-more": (b) => { S.cl.more[b.dataset.list] = !S.cl.more[b.dataset.list]; renderProjects(); renderChecklists(); },
+  "cl-new": () => openList(null),
+  "cl-edit": (b) => openList(clFind(b.dataset.id)),
+  "cl-idea": (b) => { $("#clName").value = b.dataset.name; },
+  "cl-save": async (b) => {
+    const data = { name: $("#clName").value.trim() || "To-do", color: swatchValue("clColor") };
+    if (b.dataset.id) await patch(clFind(b.dataset.id), data);
+    else { const c = await add("checklist", { ...data, items: [], order: homeLists().length }); S.cl.open = c.id; }
+    closeSheet(); renderChecklists();
+    if (!b.dataset.id) $(`.cl-add[data-list="${CSS.escape(S.cl.open)}"] input`)?.focus();
+  },
+  "cl-delete": async (b) => { await drop("checklist", b.dataset.id); S.cl.open = null; closeSheet(); renderChecklists(); },
+  "proj-type": (b) => { $$('[data-action="proj-type"]').forEach((x) => x.setAttribute("aria-pressed", x === b)); },
+});
+
 /* ============================== routine ============================== */
 S.rt = { edit: false };
 const SECTIONS = [
