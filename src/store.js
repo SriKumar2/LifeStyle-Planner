@@ -122,6 +122,7 @@ export class PlannerStore extends DurableObject {
       stickerimgs: this.list("stickerimg"),
       courses: this.list("course").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
       routine: this.list("routine").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+      notes: this.list("note").sort((a, b) => b.updated - a.updated),
       checklists: this.list("checklist").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
       routinelogs: this.list("routinelog").filter((l) => l.date >= new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10)),
       news: this.listRecent("news", 120),

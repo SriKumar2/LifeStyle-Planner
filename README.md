@@ -41,9 +41,9 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **News desk**: English current affairs for government exams, legal news, and a Leisure tab for Substack newsletters, with AI summaries.
 - **Habits** tracker, a daily mood check-in and routine notes.
 - **Countdowns** to exams, deadlines and special days.
-- **Second brain**: projects as checklists, or with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
+- **Second brain**: projects with checklists and Keep-style notes, plus rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
 - **Cloudy (AI)**: a daily brief, chat about your week, a study-week planner that adds tasks for you, news summaries and quizzes.
-- **Nine looks**: Ocean milk, Deep ocean, Ink & paper, Matcha strawberry, Sweater weather, Fall, Blueberry pie, Lavender hues, or match your device.
+- **Twelve looks**: Ocean milk, Deep ocean, Ink & paper, Matcha strawberry, Sweater weather, Fall, Blueberry pie, Lavender hues, Teal waters, Raspberry moon, Honey butter, or match your device.
 
 <p align="center"><img src="docs/images/phone.png" alt="Cloud Nine on an iPhone" width="260">&nbsp;&nbsp;<img src="docs/images/dark.png" alt="Night mode" width="560"></p>
 

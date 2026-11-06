@@ -13,7 +13,7 @@
   --script:"Cormorant Garamond","Cormorant",Georgia,serif;
   --body:"Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"DM Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
-  --r:14px; --hour:46px;
+  --r:14px; --hour:46px; --note-mix:42%;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme]){
   --paper:#0E202C; --card:#142C3A; --rail:#10232F; --todaycol:#17344A;
@@ -101,7 +101,37 @@
   --periwinkle:#D9CCEC; --sky:#B9A3DD; --mint:#EBE1F1; --sage:#CDBADB; --powder:#DCC3E3; --ice:#F1EAF8; --teal:#C9C3E4;
   --shadow:rgba(62,42,85,.2); --scrim:rgba(62,42,85,.3);
 }
-:root[data-theme="sweater"] body{background-color:var(--paper);background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:26px 26px}
+:root[data-theme="teal"]{ /* Teal waters: teal and aqua on white grid paper */
+  color-scheme: light;
+  --paper:#F6FAFA; --card:#FFFFFF; --rail:#EEF5F6; --todaycol:#E9F6F8;
+  --line:#D5E4E7; --line-soft:#E6EFF1;
+  --ink:#1F4C57; --ink-2:#3E7482; --ink-3:#86A9B1;
+  --ocean:#2E8797; --on-ocean:#FFFFFF; --milk:#4DB6C7; --rose:#A0453F; --asterisk:#A8DADC; --sel:#2E7F8D;
+  --ev-ink:#1F4C57; --mint-ink:#2E7F8D;
+  --periwinkle:#B0E0E6; --sky:#7FC8D4; --mint:#E3F3F4; --sage:#C9DEE0; --powder:#A8DADC; --ice:#E6F4F6; --teal:#9CCAD8;
+  --shadow:rgba(31,76,87,.2); --scrim:rgba(31,76,87,.3);
+}
+:root[data-theme="raspberry"]{ /* Raspberry moon: raspberry pinks on a dark night sky */
+  color-scheme: dark;
+  --paper:#170A11; --card:#23101A; --rail:#1C0C14; --todaycol:#311426;
+  --line:#3F1C2E; --line-soft:#2E1522;
+  --ink:#FBE6EE; --ink-2:#E3AFC4; --ink-3:#A9748C;
+  --ocean:#F27BA8; --on-ocean:#2A0716; --milk:#F06A9C; --rose:#FF8FA3; --asterisk:#B44C75; --sel:#AD1357;
+  --ev-ink:#5A0F2E; --mint-ink:#AD1357;
+  --periwinkle:#FFD4E4; --sky:#E99BB9; --mint:#FDE3EA; --sage:#E7B5C4; --powder:#F2B8C6; --ice:#FFE8F0; --teal:#E3A7AE;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.55);
+}
+:root[data-theme="honey"]{ /* Honey butter: honey golds and butter creams */
+  color-scheme: light;
+  --paper:#FFFCF3; --card:#FFFFFF; --rail:#FBF5E6; --todaycol:#FFF5D9;
+  --line:#EFE3C6; --line-soft:#F6EEDB;
+  --ink:#5B3A1E; --ink-2:#8A6A45; --ink-3:#B9A27E;
+  --ocean:#9C6B15; --on-ocean:#FFFFFF; --milk:#D8B13A; --rose:#7B3A36; --asterisk:#F4D68E; --sel:#8A5A10;
+  --ev-ink:#5B3A1E; --mint-ink:#8A5A10;
+  --periwinkle:#F2E6C0; --sky:#F4D68E; --mint:#F8EED6; --sage:#EAD3A5; --powder:#F4DA9D; --ice:#FBF3DE; --teal:#F7E6AE;
+  --shadow:rgba(91,58,30,.18); --scrim:rgba(91,58,30,.3);
+}
+:root[data-theme="sweater"] body,:root[data-theme="teal"] body{background-color:var(--paper);background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:26px 26px}
 
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
@@ -743,3 +773,32 @@ html{scroll-behavior:smooth}
 .theme-o .tp b:nth-of-type(1){left:9px}.theme-o .tp b:nth-of-type(2){left:27px}.theme-o .tp b:nth-of-type(3){left:45px}.theme-o .tp b:nth-of-type(4){left:63px}
 .theme-o .tn{font-size:13px;font-weight:600;padding:0 2px}
 .theme-o .tn small{display:block;font-weight:400;color:var(--ink-3);font-size:11.5px}
+
+/* notes (Second Brain) */
+.pnotes{display:flex;flex-direction:column;gap:10px}
+.notes-grid{columns:2 130px;column-gap:8px}
+.notes-grid.wide{columns:3 170px}
+.note{display:flex;flex-direction:column;gap:4px;width:100%;break-inside:avoid;margin:0 0 8px;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--card);text-align:left;color:var(--ink);position:relative;transition:box-shadow .15s ease}
+.note:hover{box-shadow:0 8px 18px -12px var(--shadow)}
+.note b{font-weight:600;font-size:13.5px;line-height:1.3;padding-right:16px;overflow-wrap:anywhere}
+.note .nb{font-size:12.5px;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+.note .nd{font-size:10.5px}
+.note .pin{position:absolute;top:7px;right:8px;font-size:11px}
+.pn-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.notes-top{display:flex;gap:8px;margin-bottom:12px}
+.notes-top input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper);color:var(--ink);outline:none}
+.notes-top input:focus{border-color:var(--ocean)}
+.note-ed{border:1px solid var(--line);border-radius:16px;padding:12px 16px;background:var(--card)}
+.note-title{width:100%;border:0;background:transparent;font-family:var(--display);font-size:21px;color:var(--ink);outline:none;padding:2px 0 6px}
+.note-body{width:100%;border:0;background:transparent;resize:none;font:inherit;font-size:15px;line-height:1.6;color:var(--ink);outline:none;min-height:180px;display:block}
+.note-title::placeholder,.note-body::placeholder{color:var(--ink-3)}
+.note-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.note-bar .btn{margin-left:auto}
+.note-colors{display:flex;gap:6px;flex-wrap:wrap}
+.note-colors button{width:22px;height:22px;border-radius:50%;border:1px solid var(--line)}
+.note-colors button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px var(--ocean)}
+@media (max-width:720px){.note-body,.note-title{font-size:16px}.note-title{font-size:19px}}
+
+/* coloured notes stay dark enough to read on dark themes */
+:root[data-theme="dark"],:root[data-theme="raspberry"]{--note-mix:20%}
+@media (prefers-color-scheme: dark){:root:not([data-theme]){--note-mix:20%}}

@@ -48,6 +48,7 @@ const appleIcon = '<svg class="apple" viewBox="0 0 24 24" aria-label="from Apple
 const ICONS = {
   leaf: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg>',
   book: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg>',
+  note: '<svg class="ico" viewBox="0 0 24 24"><path d="M6 4h9l4 4v12H6z"/><path d="M15 4v4h4M9 12h7M9 16h5"/></svg>',
   check: '<svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
   cap: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4zM6 10v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/></svg>',
   star: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.4 7.2 18.9l.9-5.4-3.9-3.8 5.4-.8z"/></svg>',
@@ -91,7 +92,7 @@ async function api(path, { method, body } = {}) {
   if (!res.ok) throw new Error((data && data.error) || `Something went wrong (${res.status})`);
   return data;
 }
-const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs", checklist: "checklists" };
+const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs", checklist: "checklists", note: "notes" };
 async function add(kind, data, id) {
   const doc = await api("/api/docs", { body: { kind, data, id } });
   const arr = S.data[COLL[kind]];
@@ -160,7 +161,7 @@ async function boot() {
   }
   $("#login").hidden = true;
   $("#app").hidden = false;
-  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs", "checklists"]) S.data[k] ||= [];
+  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs", "checklists", "notes"]) S.data[k] ||= [];
   // Older installs: subjects made before courses existed go into one course.
   if (S.data.subjects.some((x) => !x.courseId)) (async () => {
     const c = S.data.courses[0] || await add("course", { name: "PG Diploma · ILI", type: "Diploma", color: "sky", order: 0 });
@@ -257,6 +258,9 @@ const THEMES = [
   ["fall", "Fall", "burgundy &amp; tan", ["#F2E3D4", "#FBF4EC", "#240000", "#620500", "#8C3A1E", "#DAAE77", "#EBCFB0"]],
   ["blueberry", "Blueberry pie", "blues &amp; cream", ["#EEF2F9", "#FFFFFF", "#2E2F55", "#535380", "#776DA6", "#99AEDE", "#C9D2EE"]],
   ["lavender", "Lavender hues", "lilac &amp; violet", ["#F7F2F9", "#FFFFFF", "#3E2A55", "#795B96", "#A98AD3", "#B9A3DD", "#D9CCEC"]],
+  ["teal", "Teal waters", "teal &amp; aqua on grid paper", ["#F6FAFA", "#FFFFFF", "#1F4C57", "#2E8797", "#4DB6C7", "#7FC8D4", "#B0E0E6"]],
+  ["raspberry", "Raspberry moon", "raspberry pinks at night", ["#170A11", "#23101A", "#FBE6EE", "#F27BA8", "#F06A9C", "#E99BB9", "#FFD4E4"]],
+  ["honey", "Honey butter", "honey &amp; butter", ["#FFFCF3", "#FFFFFF", "#5B3A1E", "#9C6B15", "#D8B13A", "#F4D68E", "#F2E6C0"]],
 ];
 function themePicker(cur) {
   return `<div class="themes" role="group" aria-label="Look">${THEMES.map(([k, n, d, c]) => `<button type="button" class="theme-o" data-action="theme-pick" data-theme="${k}" aria-pressed="${k === cur}" style="--tp-paper:${c[0]};--tp-card:${c[1]};--tp-ink:${c[2]}"><span class="tp"><i></i>${c.slice(3).map((x) => `<b style="background:${x}"></b>`).join("")}</span><span class="tn">${n}<small>${d}</small></span></button>`).join("")}</div>`;
@@ -886,6 +890,7 @@ function renderProjects() {
   $("#projects").innerHTML = ps.map((p) => `<article class="card proj">
       <div class="ptitle"><span class="sw" style="background:var(--${esc(p.color || "ice")})">${ICONS[p.icon] || ICONS.star}</span><h3>${esc(p.name)}</h3><button class="iconbtn sm" data-action="project-edit" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">⋯</button></div>
       ${p.checklist && clFind(p.checklist) ? `<div class="pcl">${checklistHTML(clFind(p.checklist), 6)}</div>` : ""}
+      ${p.notes ? projectNotesHTML(p) : ""}
       ${(p.rooms || []).map(roomSummary).join("")}
       ${(p.rooms || []).length ? `<div class="rooms">${p.rooms.map((r) => `<button data-action="room-open" data-room="${esc(r)}">${esc(room(r)?.name || r)}</button>`).join("")}</div>` : ""}
     </article>`).join("") || '<p class="empty">Add a project to start your second brain.</p>';
@@ -931,10 +936,11 @@ function openProject(p) {
     <div class="field"><span class="lab">Colour</span>${swatches("pColor", p.color || "sky")}</div>
     ${isNew ? `<div class="field"><span class="lab">What kind of project?</span><div class="ptype">
         <button type="button" data-action="proj-type" data-type="checklist" aria-pressed="true">${ICONS.check}<b>Checklist</b><span>Things to tick off, right on the project card</span></button>
-        <button type="button" data-action="proj-type" data-type="rooms" aria-pressed="false">${ICONS.book}<b>Collection</b><span>A room for notes and items, like books, workouts or ideas</span></button></div></div>`
-      : `<label class="tickline"><input type="checkbox" id="pChecklist" ${p.checklist ? "checked" : ""}> Show a checklist on this project</label>`}
+        <button type="button" data-action="proj-type" data-type="notes" aria-pressed="false">${ICONS.note}<b>Notes</b><span>Simple notes, like Google Keep or iPhone Notes</span></button></div></div>`
+      : `<label class="tickline"><input type="checkbox" id="pChecklist" ${p.checklist ? "checked" : ""}> Show a checklist on this project</label>
+         <label class="tickline"><input type="checkbox" id="pNotes" ${p.notes ? "checked" : ""}> Show notes on this project</label>`}
     <div class="actions">${isNew ? "" : `<button class="btn danger left" data-action="project-delete" data-id="${esc(p.id)}">Remove project</button>`}<button class="btn" data-action="project-save" data-id="${esc(p.id || "")}">Save</button></div>
-    ${isNew ? "" : '<p class="sub">Removing a project hides it from the dashboard. Items inside it are kept in your backup.</p>'}`);
+    ${isNew ? "" : '<p class="sub">Removing a project hides it from the dashboard. Its notes and items are kept in your backup; its checklist is deleted.</p>'}`);
   $("#pName").focus();
 }
 
@@ -1232,15 +1238,13 @@ const ACTIONS = {
       if (want && !cur) checklist = (await add("checklist", { name, color, items: [], projectId: p.id })).id;
       if (!want && cur) { await drop("checklist", cur.id); checklist = ""; }
       if (want && cur) await patch(cur, { name, color });
-      projects = projects.map((x) => (x.id === p.id ? { ...x, name, color, checklist } : x));
+      projects = projects.map((x) => (x.id === p.id ? { ...x, name, color, checklist, notes: $("#pNotes").checked } : x));
     } else if ($('[data-action="proj-type"][aria-pressed="true"]')?.dataset.type === "checklist") {
       const pid = "p-" + crypto.randomUUID().slice(0, 8);
       const c = await add("checklist", { name, color, items: [], projectId: pid });
       projects.push({ id: pid, name, color, icon: "check", rooms: [], checklist: c.id });
     } else {
-      const rid = "custom-" + crypto.randomUUID().slice(0, 8);
-      customRooms.push({ id: rid, name });
-      projects.push({ id: "p-" + rid, name, color, icon: "star", rooms: [rid] });
+      projects.push({ id: "p-" + crypto.randomUUID().slice(0, 8), name, color, icon: "note", rooms: [], notes: true });
     }
     await saveSettings({ projects, customRooms });
     closeSheet(); renderProjects();
@@ -1890,6 +1894,99 @@ Object.assign(ACTIONS, {
   },
   "cl-delete": async (b) => { await drop("checklist", b.dataset.id); S.cl.open = null; closeSheet(); renderChecklists(); },
   "proj-type": (b) => { $$('[data-action="proj-type"]').forEach((x) => x.setAttribute("aria-pressed", x === b)); },
+});
+
+/* ============================== notes (Second Brain) ============================== */
+// Simple notes like Google Keep or iPhone Notes: a title, free text and a colour. They belong to a project.
+S.notes = { q: "" };
+const NOTE_COLORS = ["", ...COLORS];
+const notesOf = (pid) => S.data.notes.filter((n) => n.projectId === pid).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.updated - a.updated);
+const noteBg = (n) => (n.color ? `background:color-mix(in srgb,var(--${esc(n.color)}) var(--note-mix),var(--card));border-color:color-mix(in srgb,var(--${esc(n.color)}) 70%,var(--card))` : "");
+function noteCard(n) {
+  const empty = !n.title && !n.body;
+  return `<button class="note" data-action="note-open" data-id="${esc(n.id)}" style="${noteBg(n)}">
+      ${n.pinned ? '<span class="pin" aria-label="Pinned">📌</span>' : ""}
+      ${n.title ? `<b>${esc(n.title)}</b>` : ""}${n.body ? `<span class="nb">${esc(n.body)}</span>` : ""}${empty ? '<span class="nb sub">Empty note</span>' : ""}
+      <span class="nd sub">${esc(ago(new Date(n.updated).toISOString()))}</span></button>`;
+}
+function projectNotesHTML(p) {
+  const ns = notesOf(p.id), shown = ns.slice(0, 6);
+  return `<div class="pnotes">
+      ${shown.length ? `<div class="notes-grid">${shown.map(noteCard).join("")}</div>` : '<p class="empty">No notes yet. Jot down ideas, links or anything you want to remember.</p>'}
+      <div class="pn-actions"><button class="btn sm" data-action="note-new" data-project="${esc(p.id)}">+ note</button>${ns.length > shown.length ? `<button class="link" data-action="notes-all" data-project="${esc(p.id)}">all ${ns.length} notes →</button>` : ns.length > 1 ? `<button class="link" data-action="notes-all" data-project="${esc(p.id)}">search notes</button>` : ""}</div>
+    </div>`;
+}
+function openAllNotes(pid) {
+  const p = (S.data.settings.projects || []).find((x) => x.id === pid);
+  const q = S.notes.q.toLowerCase();
+  const ns = notesOf(pid).filter((n) => !q || `${n.title} ${n.body}`.toLowerCase().includes(q));
+  sheet(p?.name || "Notes", `${notesOf(pid).length} note${notesOf(pid).length === 1 ? "" : "s"}`, `
+    <div class="notes-top"><label class="vh" for="noteSearch">Search notes</label><input id="noteSearch" type="search" placeholder="Search notes…" value="${esc(S.notes.q)}" data-project="${esc(pid)}" autocomplete="off"><button class="btn" data-action="note-new" data-project="${esc(pid)}">+ note</button></div>
+    <div class="notes-grid wide">${ns.map(noteCard).join("") || '<p class="empty">No notes match.</p>'}</div>`);
+  const s = $("#noteSearch"); s.focus(); s.setSelectionRange(s.value.length, s.value.length);
+}
+// The editor saves as you type. Values are captured at input time so a save can finish after the sheet closes.
+let noteTimer = null, notePending = null, noteChain = Promise.resolve();
+function flushNote() {
+  clearTimeout(noteTimer);
+  const p = notePending; notePending = null;
+  if (!p) return noteChain;
+  const { id, projectId, data } = p;
+  // Each note has its id from the start, so saving twice updates the same note; saves run one after another.
+  noteChain = noteChain.then(async () => {
+    const exists = S.data.notes.some((x) => x.id === id);
+    if (!exists && !data.title && !data.body.trim()) return;
+    await add("note", { ...data, projectId }, id);
+    renderProjects();
+  }).catch((e) => toast(e.message));
+  return noteChain;
+}
+function queueNote(now = false) {
+  const ed = $("#noteEd");
+  if (!ed) return;
+  notePending = { id: ed.dataset.id, projectId: ed.dataset.project, data: { title: $("#nTitle").value.trim(), body: $("#nBody").value, color: ed.dataset.color || "", pinned: ed.dataset.pinned === "1" } };
+  clearTimeout(noteTimer);
+  if (now) return flushNote();
+  noteTimer = setTimeout(flushNote, 600);
+}
+function openNote(n, pid) {
+  const c = n?.color || "";
+  sheet(n ? "Note" : "New note", (S.data.settings.projects || []).find((x) => x.id === (n?.projectId || pid))?.name || "", `
+    <div class="note-ed" id="noteEd" data-id="${esc(n?.id || "note-" + crypto.randomUUID().slice(0, 12))}" data-project="${esc(n?.projectId || pid)}" data-color="${esc(c)}" data-pinned="${n?.pinned ? 1 : 0}" style="${noteBg({ color: c })}">
+      <label class="vh" for="nTitle">Title</label><input id="nTitle" class="note-title" placeholder="Title" value="${esc(n?.title || "")}" autocomplete="off">
+      <label class="vh" for="nBody">Note</label><textarea id="nBody" class="note-body" placeholder="Note…">${esc(n?.body || "")}</textarea>
+    </div>
+    <div class="note-bar">
+      <div class="note-colors" role="radiogroup" aria-label="Note colour">${NOTE_COLORS.map((x) => `<button type="button" data-action="note-color" data-color="${x}" aria-pressed="${x === c}" aria-label="${x || "no colour"}" style="background:${x ? `var(--${x})` : "var(--card)"}"></button>`).join("")}</div>
+      <button class="mini" data-action="note-pin" aria-pressed="${!!n?.pinned}">📌 ${n?.pinned ? "pinned" : "pin"}</button>
+      ${n ? `<button class="mini" data-action="note-delete" data-id="${esc(n.id)}">Delete</button>` : ""}
+      <button class="btn" data-action="note-done">Done</button>
+    </div>
+    <p class="sub" style="margin:8px 0 0">Saves as you type.</p>`);
+  const body = $("#nBody"); fitNote();
+  (n ? body : $("#nTitle")).focus();
+}
+function fitNote() { const b = $("#nBody"); if (!b) return; b.style.height = "auto"; b.style.height = Math.min(Math.max(b.scrollHeight, 180), window.innerHeight * 0.55) + "px"; }
+document.addEventListener("input", (e) => {
+  if (e.target.id === "nTitle" || e.target.id === "nBody") { if (e.target.id === "nBody") fitNote(); queueNote(); }
+  if (e.target.id === "noteSearch") {
+    S.notes.q = e.target.value;
+    const pid = e.target.dataset.project, q = S.notes.q.toLowerCase();
+    const ns = notesOf(pid).filter((n) => !q || `${n.title} ${n.body}`.toLowerCase().includes(q));
+    $(".notes-grid.wide").innerHTML = ns.map(noteCard).join("") || '<p class="empty">No notes match.</p>';
+  }
+});
+Object.assign(ACTIONS, {
+  "note-new": (b) => openNote(null, b.dataset.project),
+  "note-open": (b) => openNote(S.data.notes.find((n) => n.id === b.dataset.id)),
+  "notes-all": (b) => { S.notes.q = ""; openAllNotes(b.dataset.project); },
+  "note-color": (b) => {
+    const ed = $("#noteEd"); ed.dataset.color = b.dataset.color; ed.setAttribute("style", noteBg({ color: b.dataset.color }));
+    $$('[data-action="note-color"]').forEach((x) => x.setAttribute("aria-pressed", x === b)); queueNote();
+  },
+  "note-pin": (b) => { const ed = $("#noteEd"), on = ed.dataset.pinned !== "1"; ed.dataset.pinned = on ? 1 : 0; b.setAttribute("aria-pressed", on); b.textContent = `📌 ${on ? "pinned" : "pin"}`; queueNote(); },
+  "note-done": async () => { await queueNote(true); closeSheet(); renderProjects(); },
+  "note-delete": async (b) => { clearTimeout(noteTimer); notePending = null; await noteChain; await drop("note", b.dataset.id); closeSheet(); renderProjects(); toast("Note deleted"); },
 });
 
 /* ============================== routine ============================== */

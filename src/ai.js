@@ -123,6 +123,11 @@ function context(data, extra = {}) {
     const done = new Set((data.routinelogs || []).filter((l) => l.date === today && l.done).map((l) => l.stepId));
     lines.push("Daily routine (today):\n" + data.routine.map((r) => `- ${r.section}${r.time ? " " + r.time : ""}: ${r.title}${r.minutes ? " (" + r.minutes + " min)" : ""} ${done.has(r.id) ? "[done]" : "[not yet]"}`).join("\n"));
   }
+  const notes = (data.notes || []).slice(0, 25);
+  if (notes.length) {
+    const pname = (id) => (data.settings?.projects || []).find((p) => p.id === id)?.name || "Notes";
+    lines.push("Notes in the second brain (newest first):\n" + notes.map((n) => `- [${pname(n.projectId)}] ${n.title || "untitled"}: ${String(n.body || "").replace(/\s+/g, " ").slice(0, 160)}`).join("\n"));
+  }
   const lists = (data.checklists || []).filter((c) => (c.items || []).some((i) => !i.done));
   if (lists.length) lines.push("To-do lists and checklists (unticked items):\n" + lists.map((c) => `- ${c.name}: ${c.items.filter((i) => !i.done).slice(0, 15).map((i) => i.t).join("; ")}`).join("\n"));
   const due = (data.assignments || []).filter((a) => !a.done);

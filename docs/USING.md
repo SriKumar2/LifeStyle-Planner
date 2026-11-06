@@ -127,6 +127,9 @@ Press the ☆ **decorate** button (left rail on a computer) to open the sticker 
 | **Fall** | burgundy, rust and tan on warm beige |
 | **Blueberry pie** | blueberry blues and purples with a cream “today” |
 | **Lavender hues** | soft lilac, orchid and deep violet |
+| **Teal waters** | teal and aqua on white grid paper |
+| **Raspberry moon** | raspberry pinks on a dark night sky (a dark theme) |
+| **Honey butter** | honey golds and butter creams |
 
 Subject, course, list and event colours follow the theme too, so everything stays matched.
 
@@ -161,9 +164,19 @@ Each project card shows a summary and its **rooms**. Tap a room to see, add and 
 Use **+ new project** for your own (for example “Moot court” or “Travel”). Choose what kind it is:
 
 - **Checklist**: things to tick off, shown right on the project card with a progress bar and an add box.
-- **Collection**: a room for notes and items, like the ones above.
+- **Notes**: simple notes, like Google Keep or iPhone Notes.
 
-The **⋯** button on a card renames or removes it, and **Show a checklist on this project** adds a checklist to any project.
+The **⋯** button on a card renames or removes it. It also has **Show a checklist on this project** and **Show notes on this project**, so any project can have both.
+
+### Notes
+
+- **+ note** opens a blank note. Give it a title (optional) and write anything: ideas, links, case names, lists. It saves as you type; press **Done** or just close it.
+- Pick a colour for the note, and **📌 pin** important ones so they stay at the top.
+- The project card shows the six most recent notes, pinned first. **all notes** (or **search notes**) opens every note in that project with a search box.
+- Tap a note to read or edit it. **Delete** is inside the note.
+- Cloudy can read your notes, so you can ask things like “what did I note about the DPDP Act?”
+
+<p align="center"><img src="images/notes.png" alt="A Notes project beside a Checklist project in the second brain" width="900"></p>
 
 <p align="center"><img src="images/room.png" alt="A project room" width="640"></p>
 
