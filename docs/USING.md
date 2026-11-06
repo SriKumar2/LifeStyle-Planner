@@ -114,7 +114,23 @@ Press the ☆ **decorate** button (left rail on a computer) to open the sticker 
 
 ## Looks
 
-**Settings → General → Look** offers three themes: **Ocean milk** (pastel day), **Deep ocean** (night) and **Ink & paper** (navy ink on cream grid paper). The choice follows you to every device.
+**Settings → General → Look** shows every theme as a little preview card. Tap one to try it straight away; the choice follows you to every device.
+
+| Theme | Colours |
+|---|---|
+| **Match my device** | Ocean milk by day, Deep ocean when your phone or computer is in dark mode |
+| **Ocean milk** | pastel blue day |
+| **Deep ocean** | night |
+| **Ink & paper** | navy ink on cream grid paper |
+| **Matcha strawberry** | matcha greens with strawberry pinks |
+| **Sweater weather** | rust, caramel and olive on cream grid paper |
+| **Fall** | burgundy, rust and tan on warm beige |
+| **Blueberry pie** | blueberry blues and purples with a cream “today” |
+| **Lavender hues** | soft lilac, orchid and deep violet |
+
+Subject, course, list and event colours follow the theme too, so everything stays matched.
+
+<p align="center"><img src="images/themes.png" alt="Matcha strawberry, Sweater weather, Fall, Blueberry pie and Lavender hues themes" width="900"></p>
 
 <p align="center"><img src="images/ink.png" alt="Ink and paper theme" width="720"></p>
 

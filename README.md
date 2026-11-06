@@ -43,7 +43,7 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **Countdowns** to exams, deadlines and special days.
 - **Second brain**: projects as checklists, or with rooms for books, shows and movies, a workout log, an ILI diploma planner, certifications (with free law certifications already listed), and research ideas. Add your own projects too.
 - **Cloudy (AI)**: a daily brief, chat about your week, a study-week planner that adds tasks for you, news summaries and quizzes.
-- **Three looks**: Ocean milk (pastel day), Deep ocean (night) and Ink & paper (navy on cream).
+- **Nine looks**: Ocean milk, Deep ocean, Ink & paper, Matcha strawberry, Sweater weather, Fall, Blueberry pie, Lavender hues, or match your device.
 
 <p align="center"><img src="docs/images/phone.png" alt="Cloud Nine on an iPhone" width="260">&nbsp;&nbsp;<img src="docs/images/dark.png" alt="Night mode" width="560"></p>
 

@@ -6,7 +6,7 @@
   --line:#E3E9EE; --line-soft:#EEF2F4;
   --ink:#22455A; --ink-2:#5D7787; --ink-3:#8BA0AD;
   --ocean:#1F6F8B; --on-ocean:#FFFFFF; --milk:#AFC6D0; --rose:#7A2E2E; --asterisk:#7FA3BE;
-  --ev-ink:#22455A; --mint-ink:#3E6E64;
+  --ev-ink:#22455A; --mint-ink:#3E6E64; --sel:#1F6F8B;
   --periwinkle:#C2D0E9; --sky:#A8D1F0; --mint:#E1EFEC; --sage:#C4D6D4; --powder:#B3D2E3; --ice:#E2ECFB; --teal:#B0D2D2;
   --shadow:rgba(34,69,90,.25); --scrim:rgba(14,32,44,.3);
   --display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
@@ -15,7 +15,7 @@
   --mono:"DM Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
   --r:14px; --hour:46px;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="ink"]){
+@media (prefers-color-scheme: dark){:root:not([data-theme]){
   --paper:#0E202C; --card:#142C3A; --rail:#10232F; --todaycol:#17344A;
   --line:#22465A; --line-soft:#1B3B4C;
   --ink:#E4EEF3; --ink-2:#A6BFCC; --ink-3:#7393A4;
@@ -50,6 +50,59 @@
 :root[data-theme="ink"] .hdot{border-radius:5px;border-color:var(--ink-3)}
 :root[data-theme="ink"] .check{border-radius:4px;border-color:var(--ink-3)}
 
+/* Colour themes from Pratibha's Pinterest palettes. Each one only changes the colour tokens. */
+:root[data-theme="matcha"]{ /* Matcha strawberry: matcha green and strawberry pink, from Pratibha's references */
+  color-scheme: light;
+  --paper:#FBF8F1; --card:#FFFFFF; --rail:#F5F0E4; --todaycol:#FDF0F3;
+  --line:#E7DFCF; --line-soft:#F1EBE0;
+  --ink:#2F4A2B; --ink-2:#5F7358; --ink-3:#9AA48B;
+  --ocean:#4A6644; --on-ocean:#FFFFFF; --milk:#D3849A; --rose:#B04A5E; --asterisk:#F4C7D0; --sel:#4A6644;
+  --ev-ink:#2F4A2B; --mint-ink:#4A6644;
+  --periwinkle:#F4C7D0; --sky:#AEB984; --mint:#E5E8CF; --sage:#D7DAB5; --powder:#EFB3C1; --ice:#FCEBF0; --teal:#C6CFA0;
+  --shadow:rgba(47,74,43,.2); --scrim:rgba(47,74,43,.3);
+}
+:root[data-theme="sweater"]{ /* Sweater weather: rust, caramel and olive on cream grid paper */
+  color-scheme: light;
+  --paper:#F7F1E6; --card:#FFFCF6; --rail:#F1E9DA; --todaycol:#F8EDDA;
+  --line:#E3D5BE; --line-soft:#EEE4D3;
+  --ink:#462D1B; --ink-2:#7A5A40; --ink-3:#A88F74;
+  --ocean:#743015; --on-ocean:#FFFFFF; --milk:#A05135; --rose:#8E2F1A; --asterisk:#D9B98A; --sel:#743015;
+  --ev-ink:#462D1B; --mint-ink:#743015;
+  --periwinkle:#EAD3A9; --sky:#C98E6C; --mint:#E7E2C8; --sage:#C9C2A0; --powder:#E2B9A0; --ice:#F4E6CF; --teal:#D3B48D;
+  --shadow:rgba(70,45,27,.2); --scrim:rgba(70,45,27,.3);
+}
+:root[data-theme="fall"]{ /* Fall: burgundy, rust and tan on warm beige */
+  color-scheme: light;
+  --paper:#F2E3D4; --card:#FBF4EC; --rail:#ECDAC8; --todaycol:#F6E7D4;
+  --line:#E0C9B2; --line-soft:#EBDACA;
+  --ink:#240000; --ink-2:#5A2A1A; --ink-3:#9A7461;
+  --ocean:#620500; --on-ocean:#FFFFFF; --milk:#8C3A1E; --rose:#752300; --asterisk:#DAAE77; --sel:#620500;
+  --ev-ink:#240000; --mint-ink:#620500;
+  --periwinkle:#EBCFB0; --sky:#DAAE77; --mint:#EFDDC7; --sage:#D9BFA0; --powder:#E4B490; --ice:#F7E8D7; --teal:#CFA57D;
+  --shadow:rgba(36,0,0,.2); --scrim:rgba(36,0,0,.35);
+}
+:root[data-theme="blueberry"]{ /* Blueberry pie: blueberry blues and purples with a cream crust */
+  color-scheme: light;
+  --paper:#EEF2F9; --card:#FFFFFF; --rail:#E5EBF5; --todaycol:#FFF6E6;
+  --line:#D3DCEC; --line-soft:#E4EAF4;
+  --ink:#2E2F55; --ink-2:#535380; --ink-3:#8D93B8;
+  --ocean:#535380; --on-ocean:#FFFFFF; --milk:#776DA6; --rose:#9A3D55; --asterisk:#99AEDE; --sel:#3E708F;
+  --ev-ink:#2E2F55; --mint-ink:#535380;
+  --periwinkle:#C9D2EE; --sky:#99AEDE; --mint:#FFEDCC; --sage:#B9CEDF; --powder:#B6C3E2; --ice:#E3E8F7; --teal:#C7C3E0;
+  --shadow:rgba(46,47,85,.22); --scrim:rgba(46,47,85,.32);
+}
+:root[data-theme="lavender"]{ /* Lavender hues: soft lilac, orchid and deep violet */
+  color-scheme: light;
+  --paper:#F7F2F9; --card:#FFFFFF; --rail:#F0E8F3; --todaycol:#F4EDFA;
+  --line:#E3D7EA; --line-soft:#EEE6F2;
+  --ink:#3E2A55; --ink-2:#6A5486; --ink-3:#A08FB3;
+  --ocean:#795B96; --on-ocean:#FFFFFF; --milk:#A98AD3; --rose:#8E3A6B; --asterisk:#CDBADB; --sel:#795B96;
+  --ev-ink:#3E2A55; --mint-ink:#795B96;
+  --periwinkle:#D9CCEC; --sky:#B9A3DD; --mint:#EBE1F1; --sage:#CDBADB; --powder:#DCC3E3; --ice:#F1EAF8; --teal:#C9C3E4;
+  --shadow:rgba(62,42,85,.2); --scrim:rgba(62,42,85,.3);
+}
+:root[data-theme="sweater"] body{background-color:var(--paper);background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:26px 26px}
+
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
@@ -81,7 +134,7 @@ a{color:var(--ocean)}
 .rail .logo img{border-radius:10px;display:block}
 .rail .navbtn{width:62px;padding:7px 0 6px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);position:relative;text-decoration:none;font-size:10.5px;font-weight:500}
 .rail .navbtn:hover{background:var(--line-soft);color:var(--ocean)}
-.rail .navbtn.on{background:var(--ice);color:#1F6F8B}
+.rail .navbtn.on{background:var(--ice);color:var(--sel)}
 .rail .navbtn.on::before{content:"";position:absolute;left:-8px;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--ocean)}
 .rail .spacer{flex:1}
 main{padding:24px 28px 32px;min-width:0;position:relative;overflow:hidden;max-width:1680px;width:100%;margin:0 auto}
@@ -262,8 +315,8 @@ button.chip:hover{border-color:var(--powder);color:var(--ink)}
 .days button i{display:block;height:4px;margin:4px auto 0;width:4px;border-radius:50%;background:transparent}
 .days button.has i{background:var(--asterisk)}
 .days button.today b{text-decoration:underline;text-decoration-color:var(--asterisk);text-underline-offset:4px}
-.days button[aria-pressed="true"]{background:var(--ice);color:#1F6F8B}
-.days button[aria-pressed="true"] b{color:#1F6F8B}
+.days button[aria-pressed="true"]{background:var(--ice);color:var(--sel)}
+.days button[aria-pressed="true"] b{color:var(--sel)}
 .prio{width:12px;height:12px;border-radius:50%;flex:none;border:2px solid var(--card);box-shadow:0 0 0 1px var(--line)}
 
 .remind{grid-area:remind}
@@ -553,7 +606,7 @@ body.decorating main{padding-bottom:180px}
 .ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .ctab{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:13px;color:var(--ink-2)}
 .ctab .num{font-size:11px;color:var(--ink-3)}
-.ctab[aria-pressed="true"]{background:var(--ice);border-color:var(--powder);color:#1F6F8B;font-weight:600}
+.ctab[aria-pressed="true"]{background:var(--ice);border-color:var(--powder);color:var(--sel);font-weight:600}
 .ctab.add{border-style:dashed;color:var(--ink-3)}
 .course-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:var(--paper);border:1px solid var(--line-soft);margin-bottom:10px}
 .course-head h3{margin:0;font-family:var(--display);font-weight:500;font-size:22px;color:var(--ink)}
@@ -611,7 +664,7 @@ body.decorating main{padding-bottom:180px}
 .rstep.edit .rt-min{width:58px}
 .rt-days{display:inline-flex;gap:2px}
 .rt-days button{width:20px;height:22px;border-radius:5px;font-size:10.5px;color:var(--ink-3);border:1px solid var(--line-soft)}
-.rt-days button[aria-pressed="true"]{background:var(--ice);color:#1F6F8B;border-color:var(--powder)}
+.rt-days button[aria-pressed="true"]{background:var(--ice);color:var(--sel);border-color:var(--powder)}
 .rt-add{display:flex;gap:6px;margin-top:8px;padding-left:28px}
 .rt-add input{border:1px dashed var(--powder);border-radius:9px;padding:6px 8px;background:var(--card);font-size:12.5px;outline:none}
 .rt-add input[type=time]{flex:0 0 auto}
@@ -676,3 +729,17 @@ html{scroll-behavior:smooth}
 .board[data-view="home"] .add select{flex:1 1 90px}
 .board[data-view="home"] .remind .add input.due{flex:1 1 150px}
 .board[data-view="home"] .focus .add #taskTitle{flex-basis:100%}
+
+/* theme picker */
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.themes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.theme-o{display:flex;flex-direction:column;gap:7px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--card);text-align:left;color:var(--ink)}
+.theme-o:hover{border-color:var(--powder)}
+.theme-o[aria-pressed="true"]{border-color:var(--ocean);box-shadow:0 0 0 1px var(--ocean)}
+.theme-o .tp{display:block;height:58px;border-radius:9px;background:var(--tp-paper);border:1px solid rgba(0,0,0,.06);position:relative;overflow:hidden}
+.theme-o .tp i{position:absolute;left:9px;right:9px;top:9px;height:22px;border-radius:6px;background:var(--tp-card);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.theme-o .tp i::before{content:"";position:absolute;left:8px;top:8px;width:42%;height:6px;border-radius:3px;background:var(--tp-ink)}
+.theme-o .tp b{position:absolute;bottom:8px;width:14px;height:14px;border-radius:50%}
+.theme-o .tp b:nth-of-type(1){left:9px}.theme-o .tp b:nth-of-type(2){left:27px}.theme-o .tp b:nth-of-type(3){left:45px}.theme-o .tp b:nth-of-type(4){left:63px}
+.theme-o .tn{font-size:13px;font-weight:600;padding:0 2px}
+.theme-o .tn small{display:block;font-weight:400;color:var(--ink-3);font-size:11.5px}

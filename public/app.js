@@ -247,10 +247,27 @@ function renderChips() {
   $("#chips").innerHTML = chips.join("");
 }
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
+const THEMES = [
+  ["system", "Match my device", "day or night, like your phone", ["#FBFAF4", "#FFFFFF", "#22455A", "#A8D1F0", "#1F6F8B", "#0E202C", "#AFC6D0"]],
+  ["light", "Ocean milk", "pastel blue day", ["#FBFAF4", "#FFFFFF", "#22455A", "#A8D1F0", "#1F6F8B", "#C2D0E9", "#E1EFEC"]],
+  ["dark", "Deep ocean", "night", ["#0E202C", "#142C3A", "#E4EEF3", "#8CC6E8", "#9CC8EA", "#B7C6E3", "#6F93A6"]],
+  ["ink", "Ink &amp; paper", "navy on cream", ["#FAF6EC", "#FFFDF8", "#1B3570", "#1D45A6", "#8EA3D2", "#C9DBF3", "#9C3B2E"]],
+  ["matcha", "Matcha strawberry", "green &amp; pink", ["#FBF8F1", "#FFFFFF", "#2F4A2B", "#4A6644", "#D3849A", "#AEB984", "#F4C7D0"]],
+  ["sweater", "Sweater weather", "rust &amp; caramel", ["#F7F1E6", "#FFFCF6", "#462D1B", "#743015", "#A05135", "#C98E6C", "#EAD3A9"]],
+  ["fall", "Fall", "burgundy &amp; tan", ["#F2E3D4", "#FBF4EC", "#240000", "#620500", "#8C3A1E", "#DAAE77", "#EBCFB0"]],
+  ["blueberry", "Blueberry pie", "blues &amp; cream", ["#EEF2F9", "#FFFFFF", "#2E2F55", "#535380", "#776DA6", "#99AEDE", "#C9D2EE"]],
+  ["lavender", "Lavender hues", "lilac &amp; violet", ["#F7F2F9", "#FFFFFF", "#3E2A55", "#795B96", "#A98AD3", "#B9A3DD", "#D9CCEC"]],
+];
+function themePicker(cur) {
+  return `<div class="themes" role="group" aria-label="Look">${THEMES.map(([k, n, d, c]) => `<button type="button" class="theme-o" data-action="theme-pick" data-theme="${k}" aria-pressed="${k === cur}" style="--tp-paper:${c[0]};--tp-card:${c[1]};--tp-ink:${c[2]}"><span class="tp"><i></i>${c.slice(3).map((x) => `<b style="background:${x}"></b>`).join("")}</span><span class="tn">${n}<small>${d}</small></span></button>`).join("")}</div>`;
+}
 function setTheme(t, sync = true) {
   if (t === "system") { delete document.documentElement.dataset.theme; try { localStorage.removeItem("cn-theme"); } catch {} }
   else { document.documentElement.dataset.theme = t; try { localStorage.setItem("cn-theme", t); } catch {} }
   if (sync && S.data && S.data.settings.theme !== t) saveSettings({ theme: t }).catch(() => {});
+  // Match the phone's status bar to the page.
+  const paper = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+  $$('meta[name="theme-color"]').forEach((m) => { m.dataset.orig ||= m.content; m.content = t === "system" ? m.dataset.orig : paper; });
   renderChips();
 }
 
@@ -996,7 +1013,7 @@ async function openSettings(tab = "general") {
   if (tab === "general") {
     const theme = document.documentElement.dataset.theme || "system";
     body = `<div class="field"><label for="sName">What should Cloud Nine call you?</label><input id="sName" value="${esc(s.name || "")}"></div>
-      <div class="field"><label for="sTheme">Look</label><select id="sTheme"><option value="system" ${theme === "system" ? "selected" : ""}>Match my device</option><option value="light" ${theme === "light" ? "selected" : ""}>Ocean milk (day)</option><option value="dark" ${theme === "dark" ? "selected" : ""}>Deep ocean (night)</option><option value="ink" ${theme === "ink" ? "selected" : ""}>Ink &amp; paper (navy on cream)</option></select></div>
+      <div class="field"><span class="lab">Look <span class="sub" style="font-weight:400">· tap to try one; it follows you to every device</span></span>${themePicker(theme)}</div>
       <div class="actions"><button class="btn ghost left" data-action="logout">Sign out</button><button class="btn" data-action="save-general">Save</button></div>
       <div class="box"><h3>Install the app</h3><p><b>Windows:</b> in Edge, open the ⋯ menu → Apps → Install this site as an app. In Chrome, use the install icon at the right of the address bar.</p><p><b>iPhone:</b> open this page in Safari → Share → Add to Home Screen.</p><p><a href="${GUIDE_URL}" target="_blank" rel="noopener">Full step-by-step guide ↗</a></p></div>`;
   }
@@ -1202,6 +1219,7 @@ const ACTIONS = {
     renderProjects(); openRoom(b.dataset.room);
   },
   "item-delete": async (b) => { const it = find("items", b.dataset.id); await drop("item", it.id); renderProjects(); openRoom(it.room); },
+  "theme-pick": (b) => { setTheme(b.dataset.theme); $$('[data-action="theme-pick"]').forEach((x) => x.setAttribute("aria-pressed", x === b)); },
   "project-new": () => openProject(null),
   "project-edit": (b) => openProject((S.data.settings.projects || []).find((p) => p.id === b.dataset.id)),
   "project-save": async (b) => {
@@ -1248,7 +1266,7 @@ const ACTIONS = {
 
   // settings
   "settings": (b) => openSettings(b.dataset.tab),
-  "save-general": async () => { await saveSettings({ name: $("#sName").value.trim() || "lovely" }); setTheme($("#sTheme").value); renderHeader(); closeSheet(); toast("Saved"); },
+  "save-general": async () => { await saveSettings({ name: $("#sName").value.trim() || "lovely" }); renderHeader(); closeSheet(); toast("Saved"); },
   "cal-add": async () => {
     let url = $("#cUrl").value.trim();
     const name = $("#cName").value.trim() || "My calendar";
