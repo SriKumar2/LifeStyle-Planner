@@ -7,7 +7,7 @@ import { chat, brief, summarize, planWeek, testKey, listModels, buildChain } fro
 export { PlannerStore };
 
 const SESSION_DAYS = 180;
-const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg", "course", "routine", "routinelog", "checklist", "note"]);
+const DOC_KINDS = new Set(["todo", "task", "reminder", "habit", "habitlog", "mood", "countdown", "event", "item", "news", "chat", "subject", "topic", "weekplan", "assignment", "sticker", "stickerimg", "course", "routine", "routinelog", "checklist", "note", "journal"]);
 
 export default {
   async fetch(request, env) {
@@ -96,6 +96,25 @@ async function route(request, env, url) {
     const { kind, data, id } = await body(request);
     if (!DOC_KINDS.has(kind)) return json({ error: "Unknown kind" }, 400);
     return json(id ? await db.upsert(kind, String(id), data || {}) : await db.create(kind, data || {}));
+  }
+  // Photos: the browser shrinks a picture and posts the JPEG bytes; images are served back with long caching.
+  if (p === "/api/photos" && m === "POST") {
+    const mime = (request.headers.get("Content-Type") || "").split(";")[0].trim();
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) return json({ error: "Please upload a JPEG, PNG or WebP picture." }, 415);
+    const bytes = await request.arrayBuffer();
+    if (!bytes.byteLength) return json({ error: "That picture was empty." }, 400);
+    if (bytes.byteLength > 1900000) return json({ error: "That picture is too large. Try a smaller one." }, 413);
+    const w = Math.max(0, Math.min(10000, +url.searchParams.get("w") || 0)), h = Math.max(0, Math.min(10000, +url.searchParams.get("h") || 0));
+    return json(await db.savePhoto(crypto.randomUUID(), mime, w, h, bytes));
+  }
+  const photoMatch = p.match(/^\/api\/photos\/([0-9a-f-]{36})$/);
+  if (photoMatch) {
+    if (m === "DELETE") return json(await db.removePhoto(photoMatch[1]));
+    if (m === "GET") {
+      const ph = await db.getPhoto(photoMatch[1]);
+      if (!ph) return new Response("Not found", { status: 404 });
+      return new Response(ph.bytes, { headers: { "Content-Type": ph.mime, "Cache-Control": "private, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" } });
+    }
   }
   const docMatch = p.match(/^\/api\/docs\/([^/]+)$/);
   if (docMatch) {

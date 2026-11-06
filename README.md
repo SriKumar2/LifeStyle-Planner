@@ -35,7 +35,8 @@ Stuck? See [Troubleshooting](docs/TROUBLESHOOTING.md).
 - **Study planner**: a weekly study to-do board with a box per day, a study-hour target, top 3 priorities, weekly goals, deadlines and a weekly review.
 - **Syllabus by course**: keep each diploma, exam or certification separate, paste a syllabus, and track every topic from *to study* to *revised*. Subjects stay folded until you open them.
 - **Daily routine**: plan your morning, afternoon, evening and night, tick steps off, keep a streak, and choose which days each step happens.
-- **Stickers**: drag hand-drawn line-art stickers (sea creatures, books, scales of justice…) onto any card, or upload your own.
+- **Stickers and photos**: drag hand-drawn line-art stickers (sea creatures, books, scales of justice…) or your own photos, framed like prints, onto any card.
+- **Journal**: a lined diary with moods, prompts and photos placed right between your words.
 - **To-do & lists**: everyday to-dos and checklists (groceries, packing, errands) on the home screen.
 - **Reminders**, including the ones on your iPhone (through a small Apple Shortcut).
 - **News desk**: English current affairs for government exams, legal news, and a Leisure tab for Substack newsletters, with AI summaries.

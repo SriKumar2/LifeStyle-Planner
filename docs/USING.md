@@ -10,6 +10,7 @@ Cloud Nine has six pages. On a computer, use the panel on the left; on a phone, 
 | **Calendar** | The calendar on its own, full screen, in month or week view |
 | **Study** | The study planner: this week’s study to-do, your syllabus by course, deadlines |
 | **Routine** | Your daily routine (morning to night), habits, mood and routine notes |
+| **Journal** | Your diary, with photos inside your entries (on a phone: **More → Journal**) |
 | **News** | The news desk: current affairs and legal news |
 | **Projects** | Your second brain: projects and their rooms |
 
@@ -112,6 +113,15 @@ Press the ☆ **decorate** button (left rail on a computer) to open the sticker 
 
 <p align="center"><img src="images/stickers.png" alt="Decorating with stickers" width="720"></p>
 
+### Your photos
+
+In the same tray, switch to **Photos**.
+
+- **＋ upload photos** adds pictures from your computer or phone (you can pick several). Each one lands on the page as a little printed photo.
+- Drag, resize and rotate it like a sticker. **▢** changes the frame: polaroid, taped or plain.
+- Every photo you upload (including ones in your journal) stays in the Photos tab, so you can place it again anywhere. ✕ on a thumbnail deletes that photo everywhere.
+- Photos are shrunk before they upload, so a big phone photo becomes a few hundred KB and the app stays quick.
+
 ## Looks
 
 **Settings → General → Look** shows every theme as a little preview card. Tap one to try it straight away; the choice follows you to every device.
@@ -151,6 +161,21 @@ The **Routine** page is where you write down your routine and follow it each day
 
 **Daily rituals**, beside it, is the habit tracker. Tap a circle to tick a habit for that day. Rename habits, change colours or add new ones with **edit habits**. Below the grid, pick how you feel today.
 
+## Journal
+
+The **Journal** page (rail on a computer; **More → Journal** on a phone) is a private diary.
+
+- **＋ new entry** starts a page for today. Tap the date to change it, pick a mood, and add a title if you like.
+- Write on the lined page. Everything saves as you type.
+- **📷 add photo**: put your cursor where the picture should go and press it. The photo is placed right there, between your words, and you carry on writing underneath. You can also **paste** a picture or **drag** one onto the page.
+- Each photo has a caption line and, on hover (always on a phone), buttons to change its size (**S / M / L**), move it **↑ ↓**, or take it out of the entry.
+- **✨ give me a prompt** adds a gentle question to write about when you’re stuck.
+- Entries are listed on the left by month, with a thumbnail of the first photo. Search finds words in any entry. **hide list** gives the page the full width.
+
+Your journal is never sent to Cloudy (the AI).
+
+<p align="center"><img src="images/journal.png" alt="A journal entry with photos between the paragraphs" width="900"></p>
+
 ## Second brain
 
 Each project card shows a summary and its **rooms**. Tap a room to see, add and edit its items.
@@ -182,4 +207,4 @@ The **⋯** button on a card renames or removes it. It also has **Show a checkli
 
 ## Backup
 
-**Settings → Backup → Download backup** saves everything as one file. Do this now and then for peace of mind.
+**Settings → Backup → Download backup** saves everything (including journal text and notes) as one file. Do this now and then for peace of mind. Photos aren’t in that file; they stay safely in your Cloudflare storage.

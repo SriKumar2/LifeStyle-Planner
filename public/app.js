@@ -92,7 +92,7 @@ async function api(path, { method, body } = {}) {
   if (!res.ok) throw new Error((data && data.error) || `Something went wrong (${res.status})`);
   return data;
 }
-const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs", checklist: "checklists", note: "notes" };
+const COLL = { todo: "todos", task: "tasks", reminder: "reminders", habit: "habits", habitlog: "habitlogs", mood: "moods", countdown: "countdowns", event: "events", item: "items", news: "news", chat: "chat", subject: "subjects", topic: "topics", weekplan: "weekplans", assignment: "assignments", sticker: "stickers", stickerimg: "stickerimgs", course: "courses", routine: "routine", routinelog: "routinelogs", checklist: "checklists", note: "notes", journal: "journals" };
 async function add(kind, data, id) {
   const doc = await api("/api/docs", { body: { kind, data, id } });
   const arr = S.data[COLL[kind]];
@@ -161,7 +161,7 @@ async function boot() {
   }
   $("#login").hidden = true;
   $("#app").hidden = false;
-  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs", "checklists", "notes"]) S.data[k] ||= [];
+  for (const k of ["subjects", "topics", "weekplans", "assignments", "stickers", "stickerimgs", "courses", "routine", "routinelogs", "checklists", "notes", "photos", "journals"]) S.data[k] ||= [];
   // Older installs: subjects made before courses existed go into one course.
   if (S.data.subjects.some((x) => !x.courseId)) (async () => {
     const c = S.data.courses[0] || await add("course", { name: "PG Diploma · ILI", type: "Diploma", color: "sky", order: 0 });
@@ -221,6 +221,7 @@ document.addEventListener("visibilitychange", async () => {
 function renderAll() {
   renderHeader(); renderChips(); renderStrip(); renderCalendar(); renderFocus(); renderReminders(); renderChecklists();
   renderTodo(); renderNews(); renderHabits(); renderMood(); renderStudy(); renderRoutine(); renderProjects(); renderChat(); renderStickers();
+  if (!$("#journalBody")?.contains(document.activeElement)) renderJournal();
 }
 
 /* ============================== header ============================== */
@@ -1062,7 +1063,7 @@ async function openSettings(tab = "general") {
         <div class="actions"><button class="btn" data-action="feed-add">Add source</button></div></div>`;
   }
   if (tab === "backup") {
-    body = `<div class="box"><h3>Download a backup</h3><p>Saves everything (tasks, study plans, syllabus, routine, habits, reminders, projects) as one file. Your Gemini key is not included.</p><div class="actions"><a class="btn" href="/api/export" style="display:inline-grid;place-items:center;text-decoration:none">Download backup</a></div></div>
+    body = `<div class="box"><h3>Download a backup</h3><p>Saves everything (tasks, study plans, syllabus, routine, habits, reminders, projects, notes and journal text) as one file. Photos aren’t included in this file. Your Gemini key is not included.</p><div class="actions"><a class="btn" href="/api/export" style="display:inline-grid;place-items:center;text-decoration:none">Download backup</a></div></div>
       <p class="sub">Your data lives in your own Cloudflare account, not on anyone else’s server.</p>`;
   }
   sheet("Settings", "", tabs + body);
@@ -1133,6 +1134,7 @@ const ACTIONS = {
   "go": (b) => { closeSheet(); go(b.dataset.view); },
   "more": () => sheet("More", "", `<div class="grid2">
       <button class="btn ghost" data-action="go" data-view="calendar">📅 Calendar</button>
+      <button class="btn ghost" data-action="go" data-view="journal">📔 Journal</button>
       <button class="btn ghost" data-action="go" data-view="projects">🌱 Projects</button>
       <button class="btn ghost" data-action="ai-open">✨ Ask Cloudy</button>
       <button class="btn ghost" data-action="decorate">☆ Stickers</button>
@@ -1583,6 +1585,7 @@ document.addEventListener("focusout", (e) => {
 /* ============================== stickers ============================== */
 S.stk = { on: false, sel: null };
 function stickerArt(s) {
+  if (s.src?.startsWith("photo:")) return `<figure class="ph ph-${esc(s.frame || "polaroid")}"><img src="${photoUrl(s.src.slice(6))}" alt="" draggable="false" loading="lazy" onerror="this.closest('.stk')?.classList.add('gone')"></figure>`;
   if (s.src?.startsWith("builtin:")) return (STICKERS.find((x) => "builtin:" + x.id === s.src) || STICKERS[0]).svg;
   const img = S.data.stickerimgs.find((i) => "img:" + i.id === s.src);
   return img ? `<img src="${img.data}" alt="">` : "";
@@ -1594,18 +1597,25 @@ function renderStickers() {
     const art = stickerArt(s);
     if (!host || !art) continue;
     const el = document.createElement("div");
-    el.className = "stk" + (S.stk.sel === s.id ? " sel" : "");
+    const isPhoto = s.src?.startsWith("photo:");
+    el.className = "stk" + (isPhoto ? " photo" : "") + (S.stk.sel === s.id ? " sel" : "");
     el.dataset.id = s.id;
     el.style.left = (s.x * 100).toFixed(2) + "%";
     el.style.top = (s.y * 100).toFixed(2) + "%";
     el.style.width = (s.size || 90) + "px";
     el.style.zIndex = 6 + (s.z || 0);
     el.style.setProperty("--rot", (s.rot || 0) + "deg");
-    el.innerHTML = art + `<span class="grip" data-grip="1" aria-hidden="true"></span><span class="stk-tools"><button data-stk="rotl" aria-label="Rotate left">↺</button><button data-stk="rotr" aria-label="Rotate right">↻</button><button data-stk="flip" aria-label="Bring to front">⬆</button><button data-stk="del" aria-label="Remove sticker">✕</button></span>`;
+    el.innerHTML = art + `<span class="grip" data-grip="1" aria-hidden="true"></span><span class="stk-tools"><button data-stk="rotl" aria-label="Rotate left">↺</button><button data-stk="rotr" aria-label="Rotate right">↻</button><button data-stk="flip" aria-label="Bring to front">⬆</button>${isPhoto ? '<button data-stk="frame" aria-label="Change frame">▢</button>' : ""}<button data-stk="del" aria-label="Remove from page">✕</button></span>`;
     host.appendChild(el);
   }
 }
 function renderTray() {
+  $$('[data-action="tray-tab"]').forEach((b) => b.setAttribute("aria-pressed", b.dataset.tab === S.stk.tab));
+  $("#tray").dataset.tab = S.stk.tab;
+  if (S.stk.tab === "photos") {
+    $("#trayItems").innerHTML = `<label class="tray-up" for="photoFile">＋<span>upload</span></label>` + S.data.photos.map((p) => `<button class="ph-thumb" data-action="stk-add" data-src="photo:${esc(p.id)}" title="Add this photo to the page"><img src="${photoUrl(p.id)}" alt="Your photo" loading="lazy"><span class="rm" data-action="photo-del" data-id="${esc(p.id)}" role="button" aria-label="Delete this photo">✕</span></button>`).join("");
+    return;
+  }
   const own = S.data.stickerimgs.map((i) => `<button data-action="stk-add" data-src="img:${esc(i.id)}" title="${esc(i.name || "my sticker")}"><img src="${i.data}" alt="${esc(i.name || "my sticker")}"><span class="rm" data-action="stkimg-del" data-id="${esc(i.id)}" role="button" aria-label="Delete this upload">✕</span></button>`).join("");
   $("#trayItems").innerHTML = own + STICKERS.map((s) => `<button data-action="stk-add" data-src="builtin:${s.id}" title="${esc(s.name)}" aria-label="Add ${esc(s.name)}">${s.svg}</button>`).join("");
 }
@@ -1627,7 +1637,8 @@ async function addSticker(src) {
   const r = host.getBoundingClientRect();
   const cx = Math.min(Math.max((innerWidth / 2 - r.left) / r.width, 0.1), 0.9);
   const cy = Math.min(Math.max((innerHeight * 0.42 - r.top) / r.height, 0.1), 0.9);
-  const s = await add("sticker", { src, anchor: host.dataset.anchor, x: +cx.toFixed(4), y: +cy.toFixed(4), size: 96, rot: 0, z: S.data.stickers.length });
+  const photo = src.startsWith("photo:");
+  const s = await add("sticker", { src, anchor: host.dataset.anchor, x: +cx.toFixed(4), y: +cy.toFixed(4), size: photo ? 200 : 96, rot: photo ? Math.round(Math.random() * 8 - 4) : 0, z: S.data.stickers.length + 1, ...(photo ? { frame: "polaroid" } : {}) });
   S.stk.sel = s.id;
   renderStickers();
 }
@@ -1650,7 +1661,7 @@ document.addEventListener("pointermove", (e) => {
   const { el, s } = drag;
   if (drag.mode === "size") {
     const d = Math.max(e.clientX - drag.x0, e.clientY - drag.y0);
-    s.size = Math.round(Math.min(360, Math.max(32, drag.size0 + d * 1.4)));
+    s.size = Math.round(Math.min(s.src?.startsWith("photo:") ? 600 : 360, Math.max(32, drag.size0 + d * 1.4)));
     el.style.width = s.size + "px";
   } else {
     const r = el.parentElement.getBoundingClientRect();
@@ -1689,8 +1700,9 @@ document.addEventListener("click", async (e) => {
   if (b.dataset.stk === "rotl") s.rot = ((s.rot || 0) - 12);
   if (b.dataset.stk === "rotr") s.rot = ((s.rot || 0) + 12);
   if (b.dataset.stk === "flip") s.z = Math.max(0, ...S.data.stickers.map((x) => x.z || 0)) + 1;
+  if (b.dataset.stk === "frame") s.frame = PHOTO_FRAMES[(PHOTO_FRAMES.indexOf(s.frame || "polaroid") + 1) % PHOTO_FRAMES.length];
   renderStickers();
-  await patch(s, { rot: s.rot || 0, z: s.z || 0 });
+  await patch(s, { rot: s.rot || 0, z: s.z || 0, frame: s.frame || "" });
 }, true);
 // Upload your own sticker: shrink it, optionally turn a white background transparent, store it.
 $("#stickerFile").addEventListener("change", async (e) => {
@@ -1806,6 +1818,244 @@ ACTIONS["task-toggle"] = async (b) => {
   if (S.study.tab) renderStudy();
   renderProjects();
 };
+
+/* ============================== photos ============================== */
+// Pictures are shrunk in the browser (longest side 1600 px, JPEG) and stored once on the server.
+const photoUrl = (id) => `/api/photos/${encodeURIComponent(id)}`;
+async function uploadPhoto(file) {
+  if (!file || !/^image\//.test(file.type || "image/")) throw new Error("That file isn’t a picture.");
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(`I couldn’t read “${file.name || "that picture"}”. Try a JPEG or PNG.`)); i.src = URL.createObjectURL(file); });
+  let max = 1600, q = 0.82, blob, w, h;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    w = Math.max(1, Math.round(img.naturalWidth * k)); h = Math.max(1, Math.round(img.naturalHeight * k));
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+    blob = await new Promise((res) => c.toBlob(res, "image/jpeg", q));
+    if (blob && blob.size < 1500000) break;
+    max = Math.round(max * 0.8); q = Math.max(0.6, q - 0.06);
+  }
+  URL.revokeObjectURL(img.src);
+  const r = await fetch(`/api/photos?w=${w}&h=${h}`, { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob, credentials: "same-origin" });
+  const meta = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(meta.error || "The picture didn’t upload. Please try again.");
+  S.data.photos.unshift(meta);
+  return meta;
+}
+async function deletePhoto(id) {
+  const inJournal = S.data.journals.some((j) => (j.blocks || []).some((b) => b.t === "photo" && b.id === id));
+  const onPage = S.data.stickers.filter((s) => s.src === "photo:" + id);
+  if ((inJournal || onPage.length) && !confirm(`This photo is used ${[onPage.length ? "on your pages" : "", inJournal ? "in your journal" : ""].filter(Boolean).join(" and ")}. Delete it everywhere?`)) return false;
+  for (const s of onPage) await drop("sticker", s.id);
+  await fetch(photoUrl(id), { method: "DELETE", credentials: "same-origin" });
+  S.data.photos = S.data.photos.filter((p) => p.id !== id);
+  return true;
+}
+
+/* ============================== journal ============================== */
+S.jr = { id: null, q: "", caret: null, list: innerWidth > 900 };
+const JR_MOODS = [["great", "🥰"], ["good", "🙂"], ["okay", "😐"], ["low", "😔"], ["stressed", "😤"], ["tired", "😴"], ["grateful", "🙏"]];
+const JR_PROMPTS = [
+  "What made me smile today?", "Three things I’m grateful for:", "Something I learned today:", "What’s weighing on my mind, and what’s one small step?",
+  "A moment I want to remember:", "What would make tomorrow great?", "How did I take care of myself today?", "Something I’m proud of this week:",
+  "A conversation that stayed with me:", "If today were a chapter, its title would be…", "What I need to let go of:", "A place, smell or song that felt like home today:",
+];
+const jrWords = (blocks) => (blocks || []).filter((b) => b.t === "text").map((b) => b.v).join(" ").trim().split(/\s+/).filter(Boolean).length;
+const jrText = (j) => (j.blocks || []).filter((b) => b.t === "text").map((b) => b.v).join(" ").replace(/\s+/g, " ").trim();
+const jrPhotos = (j) => (j.blocks || []).filter((b) => b.t === "photo");
+function jrDraft() { return { id: "jr-" + crypto.randomUUID().slice(0, 12), date: todayYmd(), title: "", mood: "", blocks: [{ t: "text", v: "" }], draft: true, created: Date.now() }; }
+function jrCurrent() {
+  let j = S.data.journals.find((x) => x.id === S.jr.id) || (S.jr.draft?.id === S.jr.id ? S.jr.draft : null);
+  if (!j) { j = S.data.journals[0] || (S.jr.draft = jrDraft()); S.jr.id = j.id; }
+  return j;
+}
+// Keep the page tidy: neighbouring text pieces merge, and there is always somewhere to type after a photo.
+function jrNormalize(blocks) {
+  const out = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (b.t === "text" && last?.t === "text") last.v = [last.v.replace(/\n+$/, ""), b.v.replace(/^\n+/, "")].filter(Boolean).join("\n");
+    else out.push({ ...b });
+  }
+  if (!out.length || out[out.length - 1].t !== "text") out.push({ t: "text", v: "" });
+  if (out[0].t !== "text") out.unshift({ t: "text", v: "" });
+  return out;
+}
+function jrListHTML() {
+  const q = S.jr.q.toLowerCase();
+  const all = S.data.journals.filter((j) => !q || `${j.title} ${jrText(j)}`.toLowerCase().includes(q));
+  const months = {};
+  for (const j of all) (months[String(j.date).slice(0, 7)] ||= []).push(j);
+  const cur = jrCurrent();
+  const item = (j) => {
+    const d = parseYmd(j.date), ph = jrPhotos(j)[0], mood = JR_MOODS.find((m) => m[0] === j.mood)?.[1] || "";
+    return `<button class="jr-item" data-action="jr-open" data-id="${esc(j.id)}" aria-pressed="${j.id === cur.id}">
+        <span class="jr-day"><b class="num">${d.getDate()}</b><i>${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]}</i></span>
+        <span class="jr-sum"><b>${esc(j.title || jrText(j).slice(0, 60) || "Untitled")}</b><span>${esc(j.title ? jrText(j).slice(0, 90) : jrText(j).slice(60, 150))}</span></span>
+        ${ph ? `<img class="jr-thumb" src="${photoUrl(ph.id)}" alt="" loading="lazy">` : mood ? `<span class="jr-mood">${mood}</span>` : ""}</button>`;
+  };
+  return `<div class="jr-list-top"><button class="btn" data-action="jr-new">＋ new entry</button><label class="vh" for="jrSearch">Search your journal</label><input id="jrSearch" type="search" placeholder="Search…" value="${esc(S.jr.q)}" autocomplete="off"></div>
+    <div class="jr-entries">${Object.entries(months).map(([m, js]) => `<h4>${MONTHS[+m.slice(5) - 1]} ${m.slice(0, 4)}</h4>${js.map(item).join("")}`).join("") || `<p class="empty">${q ? "No entries match." : "Your entries will appear here."}</p>`}</div>`;
+}
+function jrPageHTML(j) {
+  const d = parseYmd(j.date);
+  const blocks = j.blocks.map((b, i) => b.t === "photo"
+    ? `<figure class="jr-photo size-${esc(b.size || "m")}${i % 4 === 1 ? " tilt-l" : i % 4 === 3 ? " tilt-r" : ""}" data-i="${i}">
+        <img src="${photoUrl(b.id)}" alt="${esc(b.cap || "Journal photo")}" loading="lazy" onerror="this.closest('figure').classList.add('gone')">
+        <span class="jr-gone">This photo was deleted.</span>
+        <figcaption><label class="vh" for="jrc-${i}">Caption</label><input id="jrc-${i}" class="jr-cap" data-i="${i}" value="${esc(b.cap || "")}" placeholder="add a caption…" autocomplete="off"></figcaption>
+        <span class="jr-ptools"><button data-action="jr-psize" data-i="${i}" title="Change size">${{ s: "S", m: "M", l: "L" }[b.size || "m"]}</button><button data-action="jr-pmove" data-i="${i}" data-d="-1" aria-label="Move photo up">↑</button><button data-action="jr-pmove" data-i="${i}" data-d="1" aria-label="Move photo down">↓</button><button data-action="jr-pdel" data-i="${i}" aria-label="Remove photo from this entry">✕</button></span>
+      </figure>`
+    : `<label class="vh" for="jrt-${i}">Journal text</label><textarea id="jrt-${i}" class="jr-text" data-i="${i}" placeholder="${i === 0 ? "Dear diary…" : "keep writing…"}">${esc(b.v)}</textarea>`).join("");
+  return `<div class="jr-paper">
+      <div class="jr-head">
+        <label class="jr-date"><span class="vh">Date</span><span class="jr-date-show">${esc(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getDay()])}, <b>${d.getDate()} ${MONTHS[d.getMonth()]}</b> ${d.getFullYear()}</span><input type="date" id="jrDate" value="${esc(j.date)}"></label>
+        <div class="jr-moods" role="group" aria-label="Mood">${JR_MOODS.map(([k, e]) => `<button data-action="jr-mood" data-mood="${k}" aria-pressed="${j.mood === k}" title="${k}">${e}</button>`).join("")}</div>
+      </div>
+      <label class="vh" for="jrTitle">Title</label><input id="jrTitle" class="jr-title" value="${esc(j.title || "")}" placeholder="A title for today (optional)" autocomplete="off">
+      <div class="jr-blocks" id="jrBlocks">${blocks}</div>
+    </div>
+    <div class="jr-bar">
+      <button class="btn" data-action="jr-photo">📷 add photo</button>
+      <button class="btn ghost" data-action="jr-prompt">✨ give me a prompt</button>
+      <span class="sub num" id="jrWords">${jrWords(j.blocks)} words</span><span class="sub" id="jrSaved">${j.draft ? "" : "saved ✓"}</span>
+      ${j.draft ? "" : `<button class="mini" data-action="jr-delete" data-id="${esc(j.id)}">Delete entry</button>`}
+    </div>
+    <p class="sub jr-hint">Tip: put your cursor where you want a picture and press <b>📷 add photo</b>, or paste or drop a picture right into your writing.</p>`;
+}
+function renderJournal(focus) {
+  const el = $("#journalBody");
+  if (!el || !S.data) return;
+  const j = jrCurrent();
+  el.innerHTML = `<aside class="jr-list${S.jr.list ? "" : " closed"}">${jrListHTML()}</aside><section class="jr-page">${jrPageHTML(j)}</section>`;
+  $("#jrSub").innerHTML = `${S.data.journals.length} entr${S.data.journals.length === 1 ? "y" : "ies"} · <button class="link" data-action="jr-toggle-list">${S.jr.list ? "hide list" : "show list"}</button>`;
+  $$(".jr-text", el).forEach(fitText);
+  if (focus) { const t = $(`#jrt-${focus.i}`); if (t) { t.focus(); t.setSelectionRange(focus.pos ?? t.value.length, focus.pos ?? t.value.length); } }
+}
+// Only the last piece of text keeps room to write; text between photos is as tall as its words.
+function fitText(t) { const last = !t.parentElement || t === t.parentElement.querySelector(".jr-text:last-of-type"); t.style.height = "auto"; t.style.height = Math.max(t.scrollHeight, last ? (t.dataset.i === "0" ? 260 : 160) : 32) + "px"; }
+// Saving: each entry has its id from the start, saves run in order, and the live entry object is kept
+// (so anything typed while a save is in flight is never replaced by the older saved copy).
+let jrTimer = null, jrPending = null, jrChain = Promise.resolve();
+function jrFlush() { clearTimeout(jrTimer); const f = jrPending; jrPending = null; if (f) f(); return jrChain; }
+function jrSave(now = false) {
+  const j = jrCurrent();
+  j.words = jrWords(j.blocks);
+  if ($("#jrWords")) $("#jrWords").textContent = `${j.words} words`;
+  if (j.draft && !(j.title || j.words || jrPhotos(j).length)) return;
+  if (jrPending && jrPending.j !== j) jrFlush();
+  if ($("#jrSaved")) $("#jrSaved").textContent = "saving…";
+  const go = () => {
+    const snap = { date: j.date, title: j.title, mood: j.mood, blocks: j.blocks.map((x) => ({ ...x })), words: j.words };
+    jrChain = jrChain.then(async () => {
+      const doc = await add("journal", snap, j.id);
+      const i = S.data.journals.findIndex((x) => x.id === doc.id);
+      const wasDraft = j.draft;
+      Object.assign(j, { kind: doc.kind, created: doc.created, updated: doc.updated }); delete j.draft;
+      if (i >= 0) S.data.journals[i] = j; else S.data.journals.push(j);
+      if (S.jr.draft === j) S.jr.draft = null;
+      S.data.journals.sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.created - a.created);
+      if (S.jr.id !== j.id) return;
+      if ($("#jrSaved")) $("#jrSaved").textContent = "saved ✓";
+      if (wasDraft && !$('[data-action="jr-delete"]')) $("#jrSaved")?.insertAdjacentHTML("afterend", `<button class="mini" data-action="jr-delete" data-id="${esc(j.id)}">Delete entry</button>`);
+      const list = $(".jr-list"); if (list && !list.contains(document.activeElement)) list.innerHTML = jrListHTML();
+    }).catch((e) => toast(e.message));
+  };
+  go.j = j; jrPending = go;
+  if (now) jrFlush(); else jrTimer = setTimeout(jrFlush, 700);
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") jrFlush(); });
+window.addEventListener("pagehide", () => jrFlush());
+async function jrInsertPhotos(files) {
+  const j = jrCurrent();
+  const pics = [...files].filter((f) => /^image\//.test(f.type));
+  if (!pics.length) return;
+  const c = S.jr.caret && j.blocks[S.jr.caret.i]?.t === "text" ? S.jr.caret : { i: j.blocks.length - 1, pos: j.blocks[j.blocks.length - 1].v.length };
+  toast(pics.length > 1 ? `Adding ${pics.length} photos…` : "Adding photo…");
+  const metas = [];
+  for (const f of pics) { try { metas.push(await uploadPhoto(f)); } catch (e) { toast(e.message); } }
+  if (!metas.length) return;
+  const tb = j.blocks[c.i], before = tb.v.slice(0, c.pos).replace(/\n+$/, ""), after = tb.v.slice(c.pos).replace(/^\n+/, "");
+  const ins = metas.flatMap((m, k) => (k ? [{ t: "text", v: "" }] : []).concat({ t: "photo", id: m.id, cap: "", size: "m" }));
+  j.blocks = jrNormalize([...j.blocks.slice(0, c.i), { t: "text", v: before }, ...ins, { t: "text", v: after }, ...j.blocks.slice(c.i + 1)]);
+  // Put the cursor right after the new photo so writing can carry on.
+  const lastPhoto = j.blocks.findIndex((b) => b.t === "photo" && b.id === metas[metas.length - 1].id);
+  S.jr.caret = { i: lastPhoto + 1, pos: 0 };
+  renderJournal(S.jr.caret);
+  jrSave(true);
+}
+const jrCaret = (t) => { if (t?.classList?.contains("jr-text")) S.jr.caret = { i: +t.dataset.i, pos: t.selectionStart }; };
+["keyup", "click", "focusin", "select"].forEach((ev) => document.addEventListener(ev, (e) => jrCaret(e.target)));
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (!t.closest?.("#journalBody")) return;
+  const j = jrCurrent();
+  if (t.classList.contains("jr-text")) { j.blocks[+t.dataset.i].v = t.value; fitText(t); jrCaret(t); jrSave(); }
+  else if (t.classList.contains("jr-cap")) { j.blocks[+t.dataset.i].cap = t.value; jrSave(); }
+  else if (t.id === "jrTitle") { j.title = t.value; jrSave(); }
+  else if (t.id === "jrSearch") { S.jr.q = t.value; const box = $(".jr-entries"); const tmp = document.createElement("div"); tmp.innerHTML = jrListHTML(); box.replaceWith(tmp.querySelector(".jr-entries")); }
+});
+document.addEventListener("change", (e) => {
+  if (e.target.id === "jrDate" && e.target.value) { jrCurrent().date = e.target.value; renderJournal(); jrSave(true); }
+  if (e.target.id === "jrPhotoFile") { const fs = e.target.files; jrInsertPhotos(fs).finally(() => { e.target.value = ""; }); }
+});
+document.addEventListener("paste", (e) => {
+  if (!e.target.closest?.(".jr-page")) return;
+  const files = [...(e.clipboardData?.files || [])].filter((f) => /^image\//.test(f.type));
+  if (!files.length) return;
+  e.preventDefault(); jrCaret(e.target); jrInsertPhotos(files);
+});
+document.addEventListener("dragover", (e) => { if (e.target.closest?.(".jr-page") && [...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); });
+document.addEventListener("drop", (e) => {
+  if (!e.target.closest?.(".jr-page")) return;
+  const files = [...(e.dataTransfer?.files || [])];
+  if (!files.length) return;
+  e.preventDefault(); jrCaret(e.target.closest(".jr-text") || null); jrInsertPhotos(files);
+});
+Object.assign(ACTIONS, {
+  "jr-new": () => { jrFlush(); S.jr.draft = jrDraft(); S.jr.id = S.jr.draft.id; S.jr.caret = { i: 0, pos: 0 }; renderJournal({ i: 0, pos: 0 }); },
+  "jr-open": (b) => { jrFlush(); if (S.jr.draft && S.jr.draft.id !== b.dataset.id) S.jr.draft = null; S.jr.id = b.dataset.id; S.jr.caret = null; renderJournal(); if (innerWidth < 720) $(".jr-page")?.scrollIntoView({ behavior: "smooth" }); },
+  "jr-toggle-list": () => { S.jr.list = !S.jr.list; renderJournal(); },
+  "jr-mood": (b) => { const j = jrCurrent(); j.mood = j.mood === b.dataset.mood ? "" : b.dataset.mood; $$('[data-action="jr-mood"]').forEach((x) => x.setAttribute("aria-pressed", x.dataset.mood === j.mood)); jrSave(true); },
+  "jr-photo": () => $("#jrPhotoFile").click(),
+  "jr-prompt": () => {
+    const j = jrCurrent(), p = JR_PROMPTS[Math.floor(Math.random() * JR_PROMPTS.length)];
+    const c = S.jr.caret && j.blocks[S.jr.caret.i]?.t === "text" ? S.jr.caret : { i: j.blocks.length - 1, pos: j.blocks[j.blocks.length - 1].v.length };
+    const t = j.blocks[c.i].v, pre = t.slice(0, c.pos), ins = `${pre && !pre.endsWith("\n") ? "\n\n" : ""}${p}\n`;
+    j.blocks[c.i].v = pre + ins + t.slice(c.pos);
+    renderJournal({ i: c.i, pos: (pre + ins).length }); jrSave();
+  },
+  "jr-psize": (b) => { const j = jrCurrent(), bl = j.blocks[+b.dataset.i]; bl.size = { s: "m", m: "l", l: "s" }[bl.size || "m"]; renderJournal(); jrSave(); },
+  "jr-pmove": (b) => {
+    const j = jrCurrent(), i = +b.dataset.i, to = i + 2 * +b.dataset.d;
+    if (to < 0 || to >= j.blocks.length) return;
+    const [ph] = j.blocks.splice(i, 1); j.blocks.splice(+b.dataset.d < 0 ? i - 1 : i + 1, 0, ph);
+    j.blocks = jrNormalize(j.blocks); renderJournal(); jrSave();
+  },
+  "jr-pdel": (b) => { const j = jrCurrent(); j.blocks.splice(+b.dataset.i, 1); j.blocks = jrNormalize(j.blocks); renderJournal(); jrSave(); },
+  "jr-delete": async (b) => {
+    if (!confirm("Delete this journal entry? Its photos stay in your photo library.")) return;
+    jrPending = null; clearTimeout(jrTimer); await jrChain; await drop("journal", b.dataset.id); S.jr.id = null; renderJournal(); toast("Entry deleted");
+  },
+});
+
+// Tapping the date opens the calendar picker (desktop browsers need a nudge).
+document.addEventListener("click", (e) => { const d = e.target.closest?.(".jr-date"); if (d && e.target.id !== "jrDate") { try { $("#jrDate").showPicker(); } catch { $("#jrDate").focus(); } } });
+
+/* ---------- photos in the sticker tray ---------- */
+S.stk.tab = "stickers";
+const PHOTO_FRAMES = ["polaroid", "tape", "plain"];
+$("#photoFile").addEventListener("change", async (e) => {
+  const files = [...(e.target.files || [])];
+  e.target.value = "";
+  for (const f of files) {
+    try { toast("Uploading photo…"); const m = await uploadPhoto(f); renderTray(); await addSticker("photo:" + m.id); } catch (err) { toast(err.message); }
+  }
+});
+Object.assign(ACTIONS, {
+  "tray-tab": (b) => { S.stk.tab = b.dataset.tab; renderTray(); },
+  "photo-del": async (b, e) => { e.stopPropagation(); if (await deletePhoto(b.dataset.id)) { renderTray(); renderStickers(); renderJournal(); } },
+});
 
 /* ============================== start ============================== */
 /* ============================== to-do & checklists ============================== */
@@ -2156,7 +2406,7 @@ document.addEventListener("submit", async (e) => {
 });
 
 /* ============================== pages ============================== */
-const VIEWS = { home: "", calendar: "your <em>calendar</em>", study: "study <em>planner</em>", routine: "routine &amp; <em>rituals</em>", news: "news <em>desk</em>", projects: "second <em>brain</em>" };
+const VIEWS = { home: "", calendar: "your <em>calendar</em>", study: "study <em>planner</em>", routine: "routine &amp; <em>rituals</em>", news: "news <em>desk</em>", journal: "my <em>journal</em>", projects: "second <em>brain</em>" };
 S.view = "home";
 function setView(v) {
   if (v === "habits") v = "routine";
@@ -2167,7 +2417,7 @@ function setView(v) {
   $$(".rail [data-view], .tabbar [data-view]").forEach((a) => a.classList.toggle("on", a.dataset.view === v));
   $("#pageTitle").innerHTML = VIEWS[v];
   document.title = v === "home" ? "Cloud Nine" : `${$("#pageTitle").textContent} · Cloud Nine`;
-  if (S.data) { if (v === "news") renderNews(); if (v === "calendar" || v === "home") renderCalendar(); if (v === "routine") renderRoutine(); renderStickers(); }
+  if (S.data) { if (v === "news") renderNews(); if (v === "calendar" || v === "home") renderCalendar(); if (v === "routine") renderRoutine(); if (v === "journal") renderJournal(); renderStickers(); }
   window.scrollTo({ top: 0 });
 }
 function go(v) { if (location.hash !== "#" + v) location.hash = v; else setView(v); }

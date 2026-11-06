@@ -18,6 +18,9 @@ export class PlannerStore extends DurableObject {
       created INTEGER NOT NULL, updated INTEGER NOT NULL)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS docs_kind ON docs(kind, updated)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL)`);
+    // Photos are stored as raw bytes in their own table and served by /api/photos/:id, so the main data stays small.
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, mime TEXT NOT NULL, w INTEGER, h INTEGER,
+      size INTEGER NOT NULL, bytes BLOB NOT NULL, created INTEGER NOT NULL)`);
     if (!this.getKV("seeded")) this.#seed();
   }
 
@@ -122,6 +125,8 @@ export class PlannerStore extends DurableObject {
       stickerimgs: this.list("stickerimg"),
       courses: this.list("course").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
       routine: this.list("routine").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+      photos: this.listPhotos(),
+      journals: this.list("journal").sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.created - a.created),
       notes: this.list("note").sort((a, b) => b.updated - a.updated),
       checklists: this.list("checklist").sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
       routinelogs: this.list("routinelog").filter((l) => l.date >= new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10)),
@@ -137,6 +142,24 @@ export class PlannerStore extends DurableObject {
   }
 
   // Full export for backups.
+  // ---------- photos ----------
+  savePhoto(id, mime, w, h, bytes) {
+    const t = now();
+    this.sql.exec(`INSERT INTO photos (id, mime, w, h, size, bytes, created) VALUES (?, ?, ?, ?, ?, ?, ?)`, id, mime, w, h, bytes.byteLength, bytes, t);
+    return { id, w, h, size: bytes.byteLength, created: t };
+  }
+  getPhoto(id) {
+    const r = this.sql.exec(`SELECT mime, bytes FROM photos WHERE id = ?`, id).toArray()[0];
+    return r ? { mime: r.mime, bytes: r.bytes } : null;
+  }
+  listPhotos() {
+    return this.sql.exec(`SELECT id, w, h, size, created FROM photos ORDER BY created DESC`).toArray();
+  }
+  removePhoto(id) {
+    this.sql.exec(`DELETE FROM photos WHERE id = ?`, id);
+    return { ok: true };
+  }
+
   exportAll() {
     const docs = this.sql.exec(`SELECT * FROM docs ORDER BY created`).toArray().map((r) => this.#row(r));
     const settings = this.getSettings();

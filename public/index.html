@@ -44,6 +44,7 @@
     <a class="navbtn" href="#calendar" data-view="calendar" title="Calendar"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Calendar</span></a>
     <a class="navbtn" href="#study" data-view="study" title="Study planner &amp; syllabus"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H5zM19 5h-4a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h4z"/></svg><span>Study</span></a>
     <a class="navbtn" href="#routine" data-view="routine" title="Routine &amp; rituals"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>Routine</span></a>
+    <a class="navbtn" href="#journal" data-view="journal" title="Journal"><svg class="ico" viewBox="0 0 24 24"><path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path d="M5 18a2 2 0 0 1 2-2h11"/><path d="M11.5 12.5s-2.5-1.4-2.5-3a1.4 1.4 0 0 1 2.5-.9 1.4 1.4 0 0 1 2.5.9c0 1.6-2.5 3-2.5 3z"/></svg><span>Journal</span></a>
     <a class="navbtn" href="#news" data-view="news" title="News desk"><svg class="ico" viewBox="0 0 24 24"><path d="M5 5h11v14H7a2 2 0 0 1-2-2zM16 9h3v8a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg><span>News</span></a>
     <a class="navbtn" href="#projects" data-view="projects" title="Second brain"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20v-8M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg><span>Projects</span></a>
     <div class="spacer"></div>
@@ -69,7 +70,7 @@
       </div>
     </header>
 
-    <header class="page-head" data-anchor="page" data-views="calendar study routine news projects">
+    <header class="page-head" data-anchor="page" data-views="calendar study routine journal news projects">
       <h1 id="pageTitle"></h1>
       <button class="ask" data-action="ai-open"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg><span>Ask Cloudy…</span><kbd>Ctrl K</kbd></button>
     </header>
@@ -175,6 +176,12 @@
         <textarea id="rnText" placeholder="Why this routine matters to me…&#10;My non-negotiables…&#10;Something I’m trying this week…"></textarea>
       </article>
 
+      <article class="card journal" id="journalCard" data-anchor="journal" data-views="journal" aria-labelledby="jrT">
+        <div class="card-head"><h2 id="jrT">dear <em>diary</em></h2><span class="sub" id="jrSub"></span></div>
+        <div class="jr" id="journalBody"></div>
+        <input type="file" id="jrPhotoFile" accept="image/*" multiple hidden>
+      </article>
+
       <section class="brain" id="brainSec" data-anchor="brain" data-views="projects" aria-labelledby="brainT">
         <div class="brain-head"><h2 id="brainT">second <em>brain</em></h2><button class="link" data-action="project-new">+ new project</button></div>
         <div class="projects" id="projects"></div>
@@ -221,10 +228,15 @@
 <!-- Sticker tray (decorate mode) -->
 <aside class="tray" id="tray" aria-label="Stickers" hidden>
   <div class="tray-head">
-    <b>✿ decorate</b><span class="sub">tap a sticker to add it, then drag it anywhere. Drag the corner dot to resize.</span>
-    <label class="mini upl" for="stickerFile">＋ upload your own</label>
+    <b>✿ decorate</b>
+    <div class="seg" role="group" aria-label="Sticker or photo"><button data-action="tray-tab" data-tab="stickers" aria-pressed="true">Stickers</button><button data-action="tray-tab" data-tab="photos" aria-pressed="false">Photos</button></div>
+    <span class="sub stk-only">tap a sticker to add it, then drag it anywhere. Drag the corner dot to resize.</span>
+    <span class="sub ph-only">add your photos to any page, then drag, resize and tilt them. ▢ changes the frame.</span>
+    <label class="mini upl stk-only" for="stickerFile">＋ upload your own</label>
     <input id="stickerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-    <label class="sub nowhite"><input type="checkbox" id="stickerNoWhite" checked> remove white background</label>
+    <label class="sub nowhite stk-only"><input type="checkbox" id="stickerNoWhite" checked> remove white background</label>
+    <label class="mini upl ph-only" for="photoFile">＋ upload photos</label>
+    <input id="photoFile" type="file" accept="image/*" multiple hidden>
     <button class="btn sm" data-action="decorate">Done</button>
   </div>
   <div class="tray-items" id="trayItems"></div>
